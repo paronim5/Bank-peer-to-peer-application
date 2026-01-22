@@ -1,0 +1,96 @@
+import random
+from typing import Optional
+from bank_node.core.config_manager import ConfigManager
+from bank_node.core.account_repository import AccountRepository
+from bank_node.core.bank_account import BankAccount
+
+class Bank:
+    """
+    Singleton class acting as the Facade for all banking operations.
+    Manages accounts via AccountRepository and uses ConfigManager for configuration.
+    """
+    _instance = None
+
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            cls._instance = super(Bank, cls).__new__(cls)
+            cls._instance._initialized = False
+        return cls._instance
+
+    def __init__(self, account_repository: Optional[AccountRepository] = None):
+        if self._initialized:
+            return
+        
+        self.config_manager = ConfigManager()
+        # In a real app, repo might be injected or created here based on config.
+        # For this step, we allow injection for easier testing, or assume it's set later.
+        self.account_repository = account_repository
+        self._initialized = True
+
+    def set_repository(self, repository: AccountRepository):
+        """Sets the account repository if not provided during init."""
+        self.account_repository = repository
+
+    def create_account(self) -> int:
+        """
+        Generates a unique 5-digit account number (10000-99999), 
+        creates a BankAccount, adds it to the repository, and returns the number.
+        """
+        if not self.account_repository:
+            raise RuntimeError("Account repository not initialized.")
+
+        # Try generating a unique number
+        while True:
+            number = random.randint(10000, 99999)
+            if self.account_repository.get_account(number) is None:
+                break
+        
+        # Default balance 0
+        account = BankAccount(number, 0)
+        self.account_repository.add_account(account)
+        self.account_repository.save() # Auto-save on creation
+        return number
+
+    def get_balance(self, account_number: int) -> int:
+        """Returns the balance of the specified account."""
+        account = self._get_account_or_raise(account_number)
+        return account.balance
+
+    def deposit(self, account_number: int, amount: int) -> int:
+        """Deposits amount into the specified account. Returns new balance."""
+        account = self._get_account_or_raise(account_number)
+        new_balance = account.deposit(amount)
+        if self.account_repository:
+            self.account_repository.save()
+        return new_balance
+
+    def withdraw(self, account_number: int, amount: int) -> int:
+        """Withdraws amount from the specified account. Returns new balance."""
+        account = self._get_account_or_raise(account_number)
+        new_balance = account.withdraw(amount)
+        if self.account_repository:
+            self.account_repository.save()
+        return new_balance
+
+    def get_total_capital(self) -> int:
+        """Sums all account balances."""
+        if not self.account_repository:
+            return 0
+        accounts = self.account_repository.get_all_accounts()
+        return sum(acc.balance for acc in accounts)
+
+    def get_client_count(self) -> int:
+        """Returns the number of clients (accounts)."""
+        if not self.account_repository:
+            return 0
+        return len(self.account_repository.get_all_accounts())
+
+    def _get_account_or_raise(self, account_number: int) -> BankAccount:
+        """Helper to retrieve account or raise error if not found."""
+        if not self.account_repository:
+            raise RuntimeError("Account repository not initialized.")
+        
+        account = self.account_repository.get_account(account_number)
+        if not account:
+            raise ValueError(f"Account {account_number} not found.")
+        return account
