@@ -5,10 +5,14 @@
  The format is based on `https://keepachangelog.com/en/1.1.0/` , 
  and this project adheres to `https://semver.org/spec/v2.0.0.html` . 
   
-  ## [1.1.1] - 2026-01-22 
+ ## [1.1.1] - 2026-01-22 
   
- ### Added Pavlo Kosov
- - Initialize project structure and add changelog
- - Implement Configuration Manager (Singleton pattern)
- - Add unit tests for Configuration Manager
- 
+ ### Added
+  
+ - Initialize project structure and add changelog.
+ - Implement Configuration Manager (Singleton pattern).
+ - Add unit tests for Configuration Manager.
+ - Implement Centralized Logger (Singleton pattern).
+ - Add unit tests for Logger.
+ - Implement Bank Account Entity (Thread-safe).
+ - Add unit tests for Bank Account Entity.
