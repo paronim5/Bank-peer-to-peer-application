@@ -1,0 +1,5 @@
+__pycache__/
+*.log
+*.db
+bank_data.json
+*.md

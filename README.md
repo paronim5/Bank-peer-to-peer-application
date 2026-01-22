@@ -519,10 +519,282 @@ bank_node/
 │  ┌─────────────────────────┐  ┌────────────────────────────────┐       │
 │  │  JsonDataStore          │  │  SqliteDataStore               │       │
 │  │  - Saves to JSON file   │  │  - Saves to SQLite DB          │
+│  │  - Simple, fast            │  │  - Relational, robust      │       │
+│  │  - Easy to read/edit      │  │  - Better for large data   │       │
+│  └─────────────────────────┘  └────────────────────────────────┘       │
+│                                                                          │
+│  ┌────────────────────────────────────────────────────────────────┐    │
+│  │                    AutoSaver (Observer)                         │    │
+│  │  - Periodic auto-save every N seconds                          │    │
+│  │  - Triggered by Bank events                                    │    │
+│  │  - Uses selected IDataStore implementation                     │    │
+│  └─────────────────────────────────────────────────────────────────┘   │
+│                                                                          │
+└──────────────────────────────────────────────────────────────────────────┘
 
----
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│                      CROSS-CUTTING CONCERNS                              │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                          │
+│  ┌────────────────────────────────────────────────────────────────┐    │
+│  │              Logger (Singleton Pattern)                         │    │
+│  │  - Centralized logging for all components                      │    │
+│  │  - File + Console output                                       │    │
+│  │  - Rotating file handler                                       │    │
+│  │  - Levels: DEBUG, INFO, WARNING, ERROR                         │    │
+│  └─────────────────────────────────────────────────────────────────┘   │
+│       ▲                ▲                ▲                ▲               │
+│       │ logs           │ logs           │ logs           │ logs          │
+│       │                │                │                │               │
+│  ┌────┴───┐  ┌────────┴──────┐  ┌──────┴────┐  ┌───────┴──────┐       │
+│  │ Server │  │ ClientHandler │  │  Commands │  │   Bank       │       │
+│  └────────┘  └───────────────┘  └───────────┘  └──────────────┘       │
+│                                                                          │
+│  ┌────────────────────────────────────────────────────────────────┐    │
+│  │          ConfigManager (Singleton Pattern)                      │    │
+│  │  - Loads config.json at startup                                │    │
+│  │  - Provides config values to all components                    │    │
+│  │  - Server config, timeouts, persistence, network               │    │
+│  └─────────────────────────────────────────────────────────────────┘   │
+│                                                                          │
+└──────────────────────────────────────────────────────────────────────────┘
+
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│                    ESSENTIALS LEVEL: PROXY FORWARDING                    │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                          │
+│  Flow: AD 10001/10.1.2.5 5000  (foreign IP)                            │
+│                                                                          │
+│  ┌────────────────────────────────────────────────────────────────┐    │
+│  │                   ClientHandler                                 │    │
+│  │  1. Receives: "AD 10001/10.1.2.5 5000"                        │    │
+│  │  2. Parses command → extracts IP: 10.1.2.5                    │    │
+│  │  3. Checks: Is 10.1.2.5 == my IP?                             │    │
+│  │  4. NO → delegate to ProxyClient                              │    │
+│  └──────────┬──────────────────────────────────────────────────────┘   │
+│             │ forwards command                                          │
+│             ▼                                                            │
+│  ┌────────────────────────────────────────────────────────────────┐    │
+│  │                   ProxyClient                                   │    │
+│  │  1. Opens TCP connection to 10.1.2.5:65530                    │    │
+│  │  2. Sends: "AD 10001/10.1.2.5 5000"                           │    │
+│  │  3. Waits for response (with timeout)                         │    │
+│  │  4. Receives: "AD" or "ER ..."                                │    │
+│  │  5. Closes connection                                          │    │
+│  │  6. Returns response to ClientHandler                          │    │
+│  └──────────┬──────────────────────────────────────────────────────┘   │
+│             │ returns response                                          │
+│             ▼                                                            │
+│  ┌────────────────────────────────────────────────────────────────┐    │
+│  │                   ClientHandler                                 │    │
+│  │  - Sends response back to original client                      │    │
+│  └─────────────────────────────────────────────────────────────────┘   │
+│                                                                          │
+└──────────────────────────────────────────────────────────────────────────┘
+
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│                   HACKER LEVEL: ROBBERY PLANNING                         │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                          │
+│  Flow: RP 1000000                                                        │
+│                                                                          │
+│  ┌────────────────────────────────────────────────────────────────┐    │
+│  │                 RPCommand (Command Pattern)                     │    │
+│  │  1. Receives target amount: 1000000                            │    │
+│  │  2. Delegates to RobberyPlanner                                │    │
+│  └──────────┬──────────────────────────────────────────────────────┘   │
+│             │                                                            │
+│             ▼                                                            │
+│  ┌────────────────────────────────────────────────────────────────┐    │
+│  │              RobberyPlanner (Facade Pattern)                    │    │
+│  │  Orchestrates the robbery planning process                     │    │
+│  └──────────┬──────────────────────────────────────────────────────┘   │
+│             │ step 1: scan network                                      │
+│             ▼                                                            │
+│  ┌────────────────────────────────────────────────────────────────┐    │
+│  │                 NetworkScanner                                  │    │
+│  │  1. Reads IP range from config: 10.1.2.1-254                  │    │
+│  │  2. For each IP:                                               │    │
+│  │     a. Try connect with short timeout (1-2s)                   │    │
+│  │     b. Send "BC" command                                       │    │
+│  │     c. If responds → bank found!                               │    │
+│  │     d. Send "BA" → get total amount                            │    │
+│  │     e. Send "BN" → get client count                            │    │
+│  │     f. Store: BankInfo(ip, amount, clients)                    │    │
+│  │  3. Returns list of discovered banks                           │    │
+│  └──────────┬──────────────────────────────────────────────────────┘   │
+│             │ returns: [BankInfo, BankInfo, ...]                        │
+│             ▼                                                            │
+│  ┌────────────────────────────────────────────────────────────────┐    │
+│  │              RobberyPlanner (continued)                         │    │
+│  │  - Has list of banks with amounts and client counts            │    │
+│  │  - Selects strategy: Greedy or DP                              │    │
+│  └──────────┬──────────────────────────────────────────────────────┘   │
+│             │ step 2: choose algorithm                                  │
+│             ▼                                                            │
+│  ┌────────────────────────┐  OR  ┌────────────────────────────────┐   │
+│  │  GreedyStrategy        │      │  DPStrategy                     │   │
+│  │  (Strategy Pattern)    │      │  (Strategy Pattern)             │   │
+│  │                        │      │                                 │   │
+│  │  Algorithm:            │      │  Algorithm:                     │   │
+│  │  1. Sort banks by      │      │  1. 0/1 Knapsack               │   │
+│  │     efficiency:        │      │  2. DP table                    │   │
+│  │     amount/clients     │      │  3. Backtracking               │   │
+│  │  2. Greedily pick      │      │  4. Optimal solution           │   │
+│  │     best banks that    │      │                                 │   │
+│  │     fit target         │      │  Complexity: O(n*target)       │   │
+│  │  3. Stop when full     │      │  Better result, slower         │   │
+│  │                        │      │                                 │   │
+│  │  Complexity: O(n log n)│      │                                 │   │
+│  │  Fast, approximate     │      │                                 │   │
+│  └────────┬───────────────┘      └───────┬────────────────────────┘   │
+│           │ returns selected banks       │ returns selected banks      │
+│           └──────────────┬───────────────┘                             │
+│                          ▼                                              │
+│  ┌────────────────────────────────────────────────────────────────┐    │
+│  │              RobberyPlanner (continued)                         │    │
+│  │  - Receives optimal bank selection                             │    │
+│  │  - Formats response message                                    │    │
+│  │  - Returns: "RP To achieve 1000000, rob banks                  │    │
+│  │              10.1.2.3 and 10.1.2.85,                          │    │
+│  │              affecting only 21 clients."                       │    │
+│  └──────────┬──────────────────────────────────────────────────────┘   │
+│             │ returns formatted message                                 │
+│             ▼                                                            │
+│  ┌────────────────────────────────────────────────────────────────┐    │
+│  │                   RPCommand                                     │    │
+│  │  - Receives formatted message                                  │    │
+│  │  - Returns to ClientHandler → Client                          │    │
+│  └─────────────────────────────────────────────────────────────────┘   │
+│                                                                          │
+└──────────────────────────────────────────────────────────────────────────┘
+
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│                        COMPLETE DATA FLOW EXAMPLE                        │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                          │
+│  Example: Client wants to deposit 5000 to account 10001                 │
+│                                                                          │
+│  1. Client sends: "AD 10001/10.1.2.3 5000\n"                           │
+│                          │                                               │
+│                          ▼                                               │
+│  2. TcpServer receives raw bytes                                        │
+│                          │                                               │
+│                          ▼                                               │
+│  3. ClientHandler decodes UTF-8 → string                                │
+│                          │                                               │
+│                          ▼                                               │
+│  4. CommandParser.parse() → ("AD", [10001, "10.1.2.3", 5000])         │
+│                          │                                               │
+│                          ▼                                               │
+│  5. Validator.validate() → checks format, ranges                        │
+│                          │                                               │
+│                          ▼                                               │
+│  6. CommandFactory.create() → ADCommand instance                        │
+│                          │                                               │
+│                          ▼                                               │
+│  7. ADCommand.execute():                                                │
+│     a. Checks if IP = local                                             │
+│     b. YES → calls Bank.deposit(10001, 5000)                           │
+│                          │                                               │
+│                          ▼                                               │
+│  8. Bank (with lock):                                                   │
+│     a. Gets account 10001                                               │
+│     b. Calls account.deposit(5000)                                      │
+│     c. Notifies observers (Logger, AutoSaver)                           │
+│                          │                                               │
+│                          ▼                                               │
+│  9. BankAccount:                                                        │
+│     a. balance += 5000                                                  │
+│     b. returns success                                                  │
+│                          │                                               │
+│                          ▼                                               │
+│  10. ADCommand:                                                         │
+│      a. Logs transaction                                                │
+│      b. Calls ResponseBuilder.success("AD", None)                      │
+│                          │                                               │
+│                          ▼                                               │
+│  11. ResponseBuilder → "AD\n"                                           │
+│                          │                                               │
+│                          ▼                                               │
+│  12. ClientHandler sends response back to client                        │
+│                          │                                               │
+│                          ▼                                               │
+│  13. Client receives: "AD\n"                                            │
+│                                                                          │
+│  Meanwhile:                                                              │
+│  14. Logger writes to file: "[2026-01-19 14:23:50] Deposit: 10001..."  │
+│  15. AutoSaver schedules persistence save                               │
+│                                                                          │
+└──────────────────────────────────────────────────────────────────────────┘
+
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│                    THREADING MODEL DIAGRAM                               │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                          │
+│  ┌────────────────────────────────────────────────────────────────┐    │
+│  │                      MAIN THREAD                                │    │
+│  │                                                                 │    │
+│  │  ┌──────────────────────────────────────────────────────────┐  │    │
+│  │  │  1. Load configuration                                    │  │    │
+│  │  │  2. Initialize Bank (Singleton)                           │  │    │
+│  │  │  3. Load persistence data                                 │  │    │
+│  │  │  4. Create ThreadPoolExecutor (max_workers=50)           │  │    │
+│  │  │  5. Start TcpServer                                       │  │    │
+│  │  │  6. Listen for connections (BLOCKING)                     │  │    │
+│  │  └──────────────────────────────────────────────────────────┘  │    │
+│  │         │                                                        │    │
+│  │         │ for each connection                                   │    │
+│  │         ▼                                                        │    │
+│  │  ┌──────────────────────────────────────────────────────────┐  │    │
+│  │  │  executor.submit(handle_client, socket, address)         │  │    │
+│  │  └──────────────────────────────────────────────────────────┘  │    │
+│  └─────────┬────────────────────────────────────────────────────────┘   │
+│            │ spawns worker threads from pool                            │
+│            ▼                                                             │
+│  ┌──────────────────────┐  ┌──────────────────────┐                    │
+│  │   WORKER THREAD 1    │  │   WORKER THREAD 2    │  ...  [up to 50]   │
+│  │                      │  │                      │                     │
+│  │  ClientHandler       │  │  ClientHandler       │                     │
+│  │  - Client A          │  │  - Client B          │                     │
+│  │  - Loop:             │  │  - Loop:             │                     │
+│  │    * recv()          │  │    * recv()          │                     │
+│  │    * parse           │  │    * parse           │                     │
+│  │    * execute         │  │    * execute         │                     │
+│  │    * respond         │  │    * respond         │                     │
+│  │                      │  │                      │                     │
+│  └──────────┬───────────┘  └──────────┬───────────┘                    │
+│             │ accesses (thread-safe)   │ accesses                       │
+│             ▼                           ▼                                │
+│  ┌────────────────────────────────────────────────────────────────┐    │
+│  │            Bank (SHARED, protected by Lock)                     │    │
+│  │                                                                 │    │
+│  │  with self.lock:  # <-- Thread-safe operations                │    │
+│  │      # Critical section                                        │    │
+│  │      # Only one thread can execute at a time                   │    │
+│  └─────────────────────────────────────────────────────────────────┘   │
+│                                                                          │
+│  ┌────────────────────────────────────────────────────────────────┐    │
+│  │                   BACKGROUND THREAD                             │    │
+│  │                                                                 │    │
+│  │  AutoSaver (daemon thread):                                    │    │
+│  │  - Wakes up every N seconds                                    │    │
+│  │  - Calls Bank.save_to_persistence()                            │    │
+│  │  - Continues loop                                               │    │
+│  └─────────────────────────────────────────────────────────────────┘   │
+│                                                                          │
+└──────────────────────────────────────────────────────────────────────────┘
 ```
 
+
+## 9. CONFIGURATION
+
+### Required Configurable Parameters:
 
 ## 6. CONFIGURATION
 
@@ -686,3 +958,25 @@ What doesn't work ideally and why
 - [ ] True parallelization (multi-threading)
 -
 
+
+
+
+filip 
+BC, AC, AP, AW, ER
+- monitoring pomoci flask 
+
+
+Pablo 
+AB, AR BA BN, AD
+- proxy comunikace s jinymi banky 
+
+
+prev code 
+- parallelization project 
+- command code rdbms project 
+- singleton code rdbms project 
+
+dalsi design patterns
+ - observer
+ - strategy vyber uloziste 
+ - 3 tier architektura presentation level business level data level  

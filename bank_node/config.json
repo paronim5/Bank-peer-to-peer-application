@@ -1,0 +1,14 @@
+{
+    "server": {
+        "ip": "127.0.0.1",
+        "port": 65525
+    },
+    "persistence": {
+        "type": "json",
+        "file_path": "bank_data.json"
+    },
+    "logging": {
+        "level": "INFO",
+        "file": "bank_node.log"
+    }
+}
