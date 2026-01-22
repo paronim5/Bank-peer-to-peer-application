@@ -8,5 +8,7 @@
   ## [1.1.1] - 2026-01-22 
   
  ### Added Pavlo Kosov
-  - Initialize project structure and add changelog
+ - Initialize project structure and add changelog
+ - Implement Configuration Manager (Singleton pattern)
+ - Add unit tests for Configuration Manager
  
