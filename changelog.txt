@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-01-23
+
+### Added
+
+- Thread safety mechanism to `Bank` class using `RLock`.
+- Stress tests for verifying concurrent account creation and transactions.
+
+### Changed
+
+- Protected `create_account`, `deposit`, and `withdraw` methods in `Bank` class with thread locks.
+
 ## [1.1.1] - 2026-01-22
 
 ### Added

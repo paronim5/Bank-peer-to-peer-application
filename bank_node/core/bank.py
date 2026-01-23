@@ -1,4 +1,5 @@
 import random
+import threading
 from typing import Optional
 from bank_node.core.config_manager import ConfigManager
 from bank_node.core.account_repository import AccountRepository
@@ -22,6 +23,7 @@ class Bank:
             return
         
         self.config_manager = ConfigManager()
+        self._lock = threading.RLock()
         # In a real app, repo might be injected or created here based on config.
         # For this step, we allow injection for easier testing, or assume it's set later.
         self.account_repository = account_repository
@@ -36,20 +38,21 @@ class Bank:
         Generates a unique 5-digit account number (10000-99999), 
         creates a BankAccount, adds it to the repository, and returns the number.
         """
-        if not self.account_repository:
-            raise RuntimeError("Account repository not initialized.")
+        with self._lock:
+            if not self.account_repository:
+                raise RuntimeError("Account repository not initialized.")
 
-        # Try generating a unique number
-        while True:
-            number = random.randint(10000, 99999)
-            if self.account_repository.get_account(number) is None:
-                break
-        
-        # Default balance 0
-        account = BankAccount(number, 0)
-        self.account_repository.add_account(account)
-        self.account_repository.save() # Auto-save on creation
-        return number
+            # Try generating a unique number
+            while True:
+                number = random.randint(10000, 99999)
+                if self.account_repository.get_account(number) is None:
+                    break
+            
+            # Default balance 0
+            account = BankAccount(number, 0)
+            self.account_repository.add_account(account)
+            self.account_repository.save() # Auto-save on creation
+            return number
 
     def get_balance(self, account_number: int) -> int:
         """Returns the balance of the specified account."""
@@ -58,19 +61,21 @@ class Bank:
 
     def deposit(self, account_number: int, amount: int) -> int:
         """Deposits amount into the specified account. Returns new balance."""
-        account = self._get_account_or_raise(account_number)
-        new_balance = account.deposit(amount)
-        if self.account_repository:
-            self.account_repository.save()
-        return new_balance
+        with self._lock:
+            account = self._get_account_or_raise(account_number)
+            new_balance = account.deposit(amount)
+            if self.account_repository:
+                self.account_repository.save()
+            return new_balance
 
     def withdraw(self, account_number: int, amount: int) -> int:
         """Withdraws amount from the specified account. Returns new balance."""
-        account = self._get_account_or_raise(account_number)
-        new_balance = account.withdraw(amount)
-        if self.account_repository:
-            self.account_repository.save()
-        return new_balance
+        with self._lock:
+            account = self._get_account_or_raise(account_number)
+            new_balance = account.withdraw(amount)
+            if self.account_repository:
+                self.account_repository.save()
+            return new_balance
 
     def get_total_capital(self) -> int:
         """Sums all account balances."""
