@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.1] - 2026-01-23
+
+### Added
+
+- `CommandType` Enum to define protocol constants and valid commands.
+- Unit tests for `CommandType`.
+
 ## [1.2.0] - 2026-01-23
 
 ### Added
