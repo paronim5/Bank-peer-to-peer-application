@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.18] - 2026-01-23
+
+### Added
+
+- `tests/__init__.py` to make the tests directory a package.
+- `tests/test_protocol_integration.py` for full banking flow integration testing.
+- Verified all protocol commands (BC, AC, AD, AW, AB, AR, BA, BN) working together.
+
 ## [1.2.17] - 2026-01-23
 
 ### Added
