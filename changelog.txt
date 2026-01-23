@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.17] - 2026-01-23
+
+### Added
+
+- Verification script `tests/verify_step_27.py` to automate manual testing steps.
+- Validated Basic Bank Node functionality (Commands: BC, AC, AD, AB) and persistence.
+
 ## [1.2.16] - 2026-01-23
 
 ### Added
