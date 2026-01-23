@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.16] - 2026-01-23
+
+### Added
+
+- `main.py` entry point to wire all components (Config, Logger, Persistence, Bank, Server).
+- Graceful shutdown handling on KeyboardInterrupt.
+
 ## [1.2.15] - 2026-01-23
 
 ### Added
