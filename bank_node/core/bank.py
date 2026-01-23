@@ -99,6 +99,19 @@ class Bank:
             self.notify("transaction", {"type": "withdraw", "account": account_number, "amount": amount})
             return new_balance
 
+    def remove_account(self, account_number: int) -> None:
+        """
+        Removes the specified account.
+        Raises ValueError if account has non-zero balance.
+        """
+        with self._lock:
+            account = self._get_account_or_raise(account_number)
+            if account.balance > 0:
+                raise ValueError("Cannot delete account with funds.")
+            
+            self.account_repository.remove_account(account_number)
+            self.notify("account_removed", {"account_number": account_number})
+
     def get_total_capital(self) -> int:
         """Sums all account balances."""
         if not self.account_repository:
