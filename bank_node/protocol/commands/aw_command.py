@@ -38,8 +38,9 @@ class AWCommand(BaseCommand):
         if not Validator.validate_account_number(account_num):
              raise ValueError("Invalid account number")
              
-        # Validate IP
-        if not Validator.validate_ip(ip_address):
+        # Validate IP (handle port if present)
+        ip_to_validate = ip_address.split(":")[0] if ":" in ip_address else ip_address
+        if not Validator.validate_ip(ip_to_validate):
             raise ValueError("Invalid IP address")
             
         # Foreign IP check removed to support Proxying
@@ -61,12 +62,32 @@ class AWCommand(BaseCommand):
         amount = int(self.args[1])
         parts = account_id.split("/")
         account_num = int(parts[0])
-        target_ip = parts[1]
+        target_ip_full = parts[1]
         
-        if not is_local_ip(target_ip):
+        target_ip = target_ip_full
+        port = self.bank.config_manager.get("server", {}).get("port", 65525)
+        provided_port = None
+
+        if ":" in target_ip:
+            target_ip, port_str = target_ip.split(":")
+            try:
+                provided_port = int(port_str)
+                port = provided_port
+            except ValueError:
+                pass
+        
+        # Check if local
+        is_local = is_local_ip(target_ip)
+        if is_local and provided_port is not None:
+             local_port = self.bank.config_manager.get("server", {}).get("port", 65525)
+             if provided_port != local_port:
+                 is_local = False
+
+        if not is_local:
             # Proxy logic
-            port = self.bank.config_manager.get("server", {}).get("port", 65525)
-            command_string = f"AW {account_id} {amount}"
+            # Use clean IP for the remote command
+            clean_account_id = f"{account_num}/{target_ip}"
+            command_string = f"AW {clean_account_id} {amount}"
             proxy = ProxyClient()
             return proxy.send_command(target_ip, port, command_string)
         

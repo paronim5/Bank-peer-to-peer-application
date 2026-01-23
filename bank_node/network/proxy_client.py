@@ -23,13 +23,9 @@ class ProxyClient:
                 s.settimeout(5.0)
                 s.connect((target_ip, port))
                 
-                # Send command (ensure newline if not present, though protocol usually implies it, 
-                # but let's just send what is given, maybe adding \n if missing is safer, 
-                # but requirements say "Send command_string (encoded)". 
-                # Let's assume command_string is complete or handled by caller.
-                # However, usually protocols need a delimiter. 
-                # Looking at previous steps (Step 27 verify script), we added \n.
-                # I will encode as is.
+                # Send command (ensure newline if not present)
+                if not command_string.endswith('\n'):
+                    command_string += '\n'
                 s.sendall(command_string.encode('utf-8'))
                 
                 # Receive response

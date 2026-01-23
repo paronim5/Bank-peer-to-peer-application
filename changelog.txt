@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.22] - 2026-01-23
+
+### Added
+
+- Integration test `tests/test_proxy.py` to verify proxy forwarding functionality between two nodes.
+- Helper script `tests/run_test_node.py` for launching test bank nodes with custom configurations.
+
+### Changed
+
+- Updated `AB`, `AD`, and `AW` commands to support `ip:port` syntax in account IDs for testing purposes.
+
 ## [1.2.21] - 2026-01-23
 
 ### Changed
