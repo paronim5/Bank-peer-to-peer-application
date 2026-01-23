@@ -1,6 +1,8 @@
 from typing import Any
 from bank_node.protocol.commands.base_command import BaseCommand
 from bank_node.protocol.validator import Validator
+from bank_node.utils.ip_helper import is_local_ip
+from bank_node.network.proxy_client import ProxyClient
 
 class ABCommand(BaseCommand):
     """
@@ -45,7 +47,16 @@ class ABCommand(BaseCommand):
         Returns: "AB <balance>"
         """
         account_id = self.args[0]
-        account_num = int(account_id.split("/")[0])
+        parts = account_id.split("/")
+        account_num = int(parts[0])
+        target_ip = parts[1]
+        
+        if not is_local_ip(target_ip):
+            # Proxy logic
+            port = self.bank.config_manager.get("server", {}).get("port", 65525)
+            command_string = f"AB {account_id}"
+            proxy = ProxyClient()
+            return proxy.send_command(target_ip, port, command_string)
         
         balance = self.bank.get_balance(account_num)
         

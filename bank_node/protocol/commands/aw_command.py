@@ -1,6 +1,8 @@
 from typing import Any
 from bank_node.protocol.commands.base_command import BaseCommand
 from bank_node.protocol.validator import Validator
+from bank_node.utils.ip_helper import is_local_ip
+from bank_node.network.proxy_client import ProxyClient
 
 class AWCommand(BaseCommand):
     """
@@ -40,16 +42,7 @@ class AWCommand(BaseCommand):
         if not Validator.validate_ip(ip_address):
             raise ValueError("Invalid IP address")
             
-        # Check if IP matches local IP
-        server_config = self.bank.config_manager.get("server")
-        local_ip = "127.0.0.1"
-        if server_config and "ip" in server_config:
-            local_ip = server_config["ip"]
-            
-        if ip_address != local_ip:
-            # Allow 127.0.0.1 as synonym for local testing if configured IP is also local-ish
-            if not (ip_address == "127.0.0.1" and local_ip in ["localhost", "127.0.0.1"]):
-                raise ValueError("Foreign account withdrawals not supported yet (Local IP only)")
+        # Foreign IP check removed to support Proxying
 
         # Validate Amount
         try:
@@ -66,7 +59,16 @@ class AWCommand(BaseCommand):
         """
         account_id = self.args[0]
         amount = int(self.args[1])
-        account_num = int(account_id.split("/")[0])
+        parts = account_id.split("/")
+        account_num = int(parts[0])
+        target_ip = parts[1]
+        
+        if not is_local_ip(target_ip):
+            # Proxy logic
+            port = self.bank.config_manager.get("server", {}).get("port", 65525)
+            command_string = f"AW {account_id} {amount}"
+            proxy = ProxyClient()
+            return proxy.send_command(target_ip, port, command_string)
         
         try:
             self.bank.withdraw(account_num, amount)
