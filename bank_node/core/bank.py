@@ -1,6 +1,6 @@
 import random
 import threading
-from typing import Optional
+from typing import Optional, List, Any
 from bank_node.core.config_manager import ConfigManager
 from bank_node.core.account_repository import AccountRepository
 from bank_node.core.bank_account import BankAccount
@@ -24,6 +24,7 @@ class Bank:
         
         self.config_manager = ConfigManager()
         self._lock = threading.RLock()
+        self._observers: List[Any] = []
         # In a real app, repo might be injected or created here based on config.
         # For this step, we allow injection for easier testing, or assume it's set later.
         self.account_repository = account_repository
@@ -32,6 +33,24 @@ class Bank:
     def set_repository(self, repository: AccountRepository):
         """Sets the account repository if not provided during init."""
         self.account_repository = repository
+
+    def subscribe(self, observer: Any):
+        """Adds an observer to the list."""
+        with self._lock:
+            if observer not in self._observers:
+                self._observers.append(observer)
+
+    def unsubscribe(self, observer: Any):
+        """Removes an observer from the list."""
+        with self._lock:
+            if observer in self._observers:
+                self._observers.remove(observer)
+
+    def notify(self, event_type: str, data: Any = None):
+        """Notifies all observers of an event."""
+        observers_copy = self._observers[:] 
+        for observer in observers_copy:
+            observer.update(event_type, data)
 
     def create_account(self) -> int:
         """
@@ -51,7 +70,8 @@ class Bank:
             # Default balance 0
             account = BankAccount(number, 0)
             self.account_repository.add_account(account)
-            self.account_repository.save() # Auto-save on creation
+            # self.account_repository.save() # Removed in favor of Observer
+            self.notify("account_created", {"account_number": number})
             return number
 
     def get_balance(self, account_number: int) -> int:
@@ -64,8 +84,9 @@ class Bank:
         with self._lock:
             account = self._get_account_or_raise(account_number)
             new_balance = account.deposit(amount)
-            if self.account_repository:
-                self.account_repository.save()
+            # if self.account_repository:
+            #     self.account_repository.save()
+            self.notify("transaction", {"type": "deposit", "account": account_number, "amount": amount})
             return new_balance
 
     def withdraw(self, account_number: int, amount: int) -> int:
@@ -73,8 +94,9 @@ class Bank:
         with self._lock:
             account = self._get_account_or_raise(account_number)
             new_balance = account.withdraw(amount)
-            if self.account_repository:
-                self.account_repository.save()
+            # if self.account_repository:
+            #     self.account_repository.save()
+            self.notify("transaction", {"type": "withdraw", "account": account_number, "amount": amount})
             return new_balance
 
     def get_total_capital(self) -> int:

@@ -18,6 +18,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Protected `create_account`, `deposit`, and `withdraw` methods in `Bank` class with thread locks.
 
+## [1.1.2] - 2026-01-22
+
+### Added
+
+- Observer pattern implementation in `Bank` class (Subject).
+- `AutoSaver` class (Observer) for automatic persistence on transactions.
+- Integration tests for Observer pattern.
+
+### Changed
+
+- `Bank` class now notifies observers instead of calling `save()` directly.
+
 ## [1.1.1] - 2026-01-22
 
 ### Added
