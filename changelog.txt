@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.20] - 2026-01-23
+
+### Added
+
+- `network/proxy_client.py` with `ProxyClient` class to communicate with other bank nodes.
+- `send_command` method to open connections, send commands, and retrieve responses.
+- Unit tests for `ProxyClient` (success, timeout, connection errors).
+
 ## [1.2.19] - 2026-01-23
 
 ### Added
