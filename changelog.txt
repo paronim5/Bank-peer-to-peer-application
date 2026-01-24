@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.26] - 2026-01-24
+
+### Added
+
+- `robbery/dp_strategy.py` with `DpStrategy` class.
+- Implemented `plan` method using 0/1 Knapsack Dynamic Programming.
+- Logic to maximize stolen amount first, then minimize client count.
+- Unit tests for `DpStrategy` validating optimality over Greedy.
+
 ## [1.2.25] - 2026-01-24
 
 ### Added
