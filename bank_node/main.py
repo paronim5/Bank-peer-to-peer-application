@@ -6,6 +6,7 @@ from bank_node.core.config_manager import ConfigManager
 from bank_node.core.bank import Bank
 from bank_node.core.account_repository import AccountRepository
 from bank_node.persistence.json_data_store import JsonDataStore
+from bank_node.persistence.sqlite_data_store import SqliteDataStore
 from bank_node.persistence.auto_saver import AutoSaver
 from bank_node.network.tcp_server import TcpServer
 
@@ -45,10 +46,17 @@ def main():
     try:
         # 3. Initialize Persistence Layer
         persistence_config = config_manager.get("persistence", {})
-        db_path = persistence_config.get("file_path", "bank_data.json")
+        store_type = persistence_config.get("type", "json").lower()
         
-        # Ensure data store file exists or handled by store
-        data_store = JsonDataStore(db_path)
+        if store_type == "sqlite":
+            db_path = persistence_config.get("file_path", "bank_data.db")
+            data_store = SqliteDataStore(db_path)
+            logger.info(f"Using SQLite persistence: {db_path}")
+        else:
+            db_path = persistence_config.get("file_path", "bank_data.json")
+            data_store = JsonDataStore(db_path)
+            logger.info(f"Using JSON persistence: {db_path}")
+
         account_repository = AccountRepository(data_store)
         
         # Load existing data
