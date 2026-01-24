@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.24] - 2026-01-24
+
+### Added
+
+- `network/network_scanner.py` with `NetworkScanner` class for discovering bank nodes.
+- Implemented `scan` method to probe IPs using `BC`, `BA`, and `BN` commands.
+- Concurrent scanning using `ThreadPoolExecutor`.
+- Unit tests for `NetworkScanner`.
+
+## [1.2.23] - 2026-01-24
+
+### Added
+
+- `robbery/bank_info.py` with `BankInfo` class to store bank metrics (IP, total amount, client count).
+
 ## [1.2.22] - 2026-01-23
 
 ### Added
