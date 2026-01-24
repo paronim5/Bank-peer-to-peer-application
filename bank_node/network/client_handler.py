@@ -4,6 +4,7 @@ import logging
 from typing import Tuple
 
 from bank_node.core.bank import Bank
+from bank_node.core.config_manager import ConfigManager
 from bank_node.protocol.command_factory import CommandFactory
 from bank_node.protocol.command_parser import CommandParser
 from bank_node.protocol.command_enum import CommandType
@@ -37,7 +38,9 @@ class ClientHandler(threading.Thread):
         self._register_commands()
         
         # Set a timeout for the socket operations (e.g., 60 seconds)
-        self.client_socket.settimeout(60.0)
+        config = ConfigManager()
+        timeout = config.get("network", {}).get("client_timeout", 60.0)
+        self.client_socket.settimeout(timeout)
 
     def _register_commands(self):
         """Registers all supported commands with the factory."""

@@ -3,14 +3,19 @@ import concurrent.futures
 from typing import List, Optional
 from robbery.bank_info import BankInfo
 from bank_node.network.proxy_client import ProxyClient
+from bank_node.core.config_manager import ConfigManager
 
 class NetworkScanner:
     """
     Scans the network for active bank nodes and retrieves their information.
     """
-    def __init__(self, port: int = 65525, max_workers: int = 20):
+    def __init__(self, port: int = 65525, max_workers: int = None):
         self.port = port
-        self.max_workers = max_workers
+        if max_workers is None:
+             config = ConfigManager()
+             self.max_workers = config.get("network", {}).get("scan_workers", 50)
+        else:
+            self.max_workers = max_workers
         self.proxy_client = ProxyClient()
 
     def scan(self, ip_range_start: str, ip_range_end: str) -> List[BankInfo]:

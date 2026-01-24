@@ -1,10 +1,14 @@
 import socket
+from bank_node.core.config_manager import ConfigManager
 
 class ProxyClient:
     """
     Client for communicating with other bank nodes.
     Capable of opening a connection, sending a command, and retrieving the response.
     """
+    def __init__(self):
+        self.config = ConfigManager()
+        self.timeout = self.config.get("network", {}).get("proxy_timeout", 5.0)
 
     def send_command(self, target_ip: str, port: int, command_string: str) -> str:
         """
@@ -20,7 +24,7 @@ class ProxyClient:
         """
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                s.settimeout(5.0)
+                s.settimeout(self.timeout)
                 s.connect((target_ip, port))
                 
                 # Send command (ensure newline if not present)
