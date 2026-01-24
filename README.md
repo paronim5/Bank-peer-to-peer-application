@@ -1,3 +1,60 @@
+# P2P Bank Node - User Guide
+
+## Quick Start
+
+### Prerequisites
+- Python 3.8 or higher.
+- No external libraries required (uses standard library).
+
+### Installation
+1. Clone the repository:
+   ```bash
+   git clone <repository_url>
+   cd Bank-peer-to-peer-application
+   ```
+
+### Running the Node
+Run the application from the project root:
+```bash
+python bank_node/main.py
+```
+The server will start on the configured port (default: 65525).
+
+### Configuration
+You can configure the node by creating a `config.json` file in the root directory or `bank_node/config.json`.
+
+**Example `config.json`:**
+```json
+{
+    "server": {
+        "ip": "127.0.0.1",
+        "port": 65525
+    },
+    "persistence": {
+        "type": "json",
+        "file_path": "bank_data.json"
+    },
+    "logging": {
+        "level": "INFO",
+        "file": "bank_node.log"
+    },
+    "network": {
+        "client_timeout": 60.0,
+        "proxy_timeout": 5.0,
+        "scan_workers": 50
+    }
+}
+```
+
+### Connecting
+You can connect to the bank node using Telnet or PuTTY:
+```bash
+telnet 127.0.0.1 65525
+```
+Once connected, you can type commands (e.g., `BC`, `AC`, `BA`).
+
+---
+
 # P2P Bank Node - Complete Requirements for Maximum Points
 
 To achieve the best grade, you must complete **HACKER BANK NODE** + demonstrate excellent architecture, code reuse, and custom extensions.

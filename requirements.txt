@@ -1,0 +1,2 @@
+# Standard library only (socket, threading, json, sqlite3, unittest, logging)
+# No external dependencies required.
