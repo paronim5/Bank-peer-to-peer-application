@@ -2,6 +2,12 @@ import sys
 import os
 import logging
 import time
+
+# Add project root to sys.path to allow absolute imports when running directly
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
 from bank_node.core.config_manager import ConfigManager
 from bank_node.core.bank import Bank
 from bank_node.core.account_repository import AccountRepository
@@ -21,7 +27,7 @@ def setup_logging(config: ConfigManager):
     level = getattr(logging, level_str, logging.INFO)
     
     # Configure root logger
-    logging.basicConfig(
+    logging.basicConfig( 
         level=level,
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
         handlers=[
