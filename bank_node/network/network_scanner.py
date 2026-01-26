@@ -1,98 +1,85 @@
 import ipaddress
 import concurrent.futures
+import logging
 from typing import List, Optional
-from robbery.bank_info import BankInfo
 from bank_node.network.proxy_client import ProxyClient
-from bank_node.core.config_manager import ConfigManager
+from bank_node.robbery.bank_info import BankInfo
 
 class NetworkScanner:
     """
-    Scans the network for active bank nodes and retrieves their information.
+    Scans the network for other active bank nodes.
     """
-    def __init__(self, port: int = 65525, max_workers: int = None):
+
+    def __init__(self, port: int = 65525, workers: int = 50, timeout: int = 1):
         self.port = port
-        if max_workers is None:
-             config = ConfigManager()
-             self.max_workers = config.get("network", {}).get("scan_workers", 50)
-        else:
-            self.max_workers = max_workers
-        self.proxy_client = ProxyClient()
+        self.workers = workers
+        self.timeout = timeout
+        self.logger = logging.getLogger("NetworkScanner")
+        self.proxy = ProxyClient(timeout=self.timeout)
 
     def scan(self, ip_range_start: str, ip_range_end: str) -> List[BankInfo]:
         """
-        Scans a range of IPs for bank nodes.
-        
-        Args:
-            ip_range_start (str): Start IP address (e.g., "192.168.1.1").
-            ip_range_end (str): End IP address (e.g., "192.168.1.254").
-            
-        Returns:
-            List[BankInfo]: A list of discovered BankInfo objects.
+        Scans a range of IPs to find active banks.
+        Returns a list of BankInfo objects.
         """
-        discovered_banks = []
+        active_banks: List[BankInfo] = []
         
         try:
-            # Convert IPs to integers for iteration
-            start_ip = int(ipaddress.IPv4Address(ip_range_start))
-            end_ip = int(ipaddress.IPv4Address(ip_range_end))
-        except ipaddress.AddressValueError:
-            return []
-        
-        ips_to_scan = []
-        for ip_int in range(start_ip, end_ip + 1):
-            ips_to_scan.append(str(ipaddress.IPv4Address(ip_int)))
+            start_ip = ipaddress.IPv4Address(ip_range_start)
+            end_ip = ipaddress.IPv4Address(ip_range_end)
             
-        with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_workers) as executor:
-            future_to_ip = {executor.submit(self._probe_node, ip): ip for ip in ips_to_scan}
+            # Generate IP list
+            ips_to_scan = [str(ipaddress.IPv4Address(ip)) for ip in range(int(start_ip), int(end_ip) + 1)]
             
-            for future in concurrent.futures.as_completed(future_to_ip):
-                ip = future_to_ip[future]
-                try:
-                    result = future.result()
-                    if result:
-                        discovered_banks.append(result)
-                except Exception:
-                    # Log error if needed, but for scanner we usually ignore failures
-                    pass
-                    
-        return discovered_banks
+            self.logger.info(f"Scanning {len(ips_to_scan)} IPs from {ip_range_start} to {ip_range_end}...")
+            
+            with concurrent.futures.ThreadPoolExecutor(max_workers=self.workers) as executor:
+                # Map IPs to the check_bank method
+                future_to_ip = {executor.submit(self._check_bank, ip): ip for ip in ips_to_scan}
+                
+                for future in concurrent.futures.as_completed(future_to_ip):
+                    ip = future_to_ip[future]
+                    try:
+                        bank_info = future.result()
+                        if bank_info:
+                            active_banks.append(bank_info)
+                    except Exception as e:
+                        self.logger.error(f"Error scanning {ip}: {e}")
+                        
+        except Exception as e:
+            self.logger.error(f"Scan failed: {e}")
 
-    def _probe_node(self, ip: str) -> Optional[BankInfo]:
+        return active_banks
+
+    def _check_bank(self, ip: str) -> Optional[BankInfo]:
         """
-        Probes a single IP to check if it's a bank node and retrieves its info.
-        
-        Returns:
-            BankInfo object if valid bank node found, None otherwise.
+        Checks if a specific IP is a bank node.
+        1. Send BC (Bank Code) -> Expect "BC <ip>"
+        2. Send BA (Bank Amount) -> Expect "BA <amount>"
+        3. Send BN (Bank Number) -> Expect "BN <count>"
         """
-        # 1. Send BC (Bank Code) to check connectivity and verify it's a bank
-        # BC response format: "BC <ip>"
-        response_bc = self.proxy_client.send_command(ip, self.port, "BC")
+        # 1. Check if it's a bank (BC)
+        response_bc = self.proxy.send_command(ip, self.port, "BC")
         if not response_bc.startswith("BC"):
             return None
-            
-        # 2. Send BA (Bank Amount)
-        # BA response format: "BA <amount>"
-        response_ba = self.proxy_client.send_command(ip, self.port, "BA")
+        
+        # 2. Get Total Amount (BA)
+        response_ba = self.proxy.send_command(ip, self.port, "BA")
         total_amount = 0
         if response_ba.startswith("BA"):
             try:
-                # Handle potentially missing parts
-                parts = response_ba.split()
-                if len(parts) > 1:
-                    total_amount = int(parts[1])
+                total_amount = int(response_ba.split()[1])
             except (IndexError, ValueError):
                 pass
         
-        # 3. Send BN (Bank Number of clients)
-        # BN response format: "BN <number>"
-        response_bn = self.proxy_client.send_command(ip, self.port, "BN")
-        num_clients = 0
+        # 3. Get Client Count (BN)
+        response_bn = self.proxy.send_command(ip, self.port, "BN")
+        client_count = 0
         if response_bn.startswith("BN"):
             try:
-                parts = response_bn.split()
-                if len(parts) > 1:
-                    num_clients = int(parts[1])
+                client_count = int(response_bn.split()[1])
             except (IndexError, ValueError):
                 pass
                 
-        return BankInfo(ip, total_amount, num_clients)
+        self.logger.info(f"Found bank at {ip}: ${total_amount}, {client_count} clients")
+        return BankInfo(ip, self.port, total_amount, client_count)
