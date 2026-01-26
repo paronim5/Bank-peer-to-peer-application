@@ -40,3 +40,21 @@ def get_primary_local_ip() -> str:
         if server_config and "ip" in server_config and server_config["ip"] != "0.0.0.0":
             return server_config["ip"]
         return "127.0.0.1"
+
+def get_local_subnet_range(ip: str) -> tuple[str, str]:
+    """
+    Returns the start and end IP of the /24 subnet for the given IP.
+    e.g. 192.168.0.4 -> (192.168.0.1, 192.168.0.254)
+    """
+    if ip == "127.0.0.1" or ip == "localhost":
+        return "127.0.0.1", "127.0.0.10" # Default small local range
+        
+    try:
+        parts = ip.split('.')
+        if len(parts) != 4:
+            return "127.0.0.1", "127.0.0.10"
+            
+        base = ".".join(parts[:3])
+        return f"{base}.1", f"{base}.254"
+    except Exception:
+        return "127.0.0.1", "127.0.0.10"

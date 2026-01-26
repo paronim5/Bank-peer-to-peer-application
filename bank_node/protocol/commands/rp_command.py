@@ -2,6 +2,7 @@ from typing import Any
 from bank_node.protocol.commands.base_command import BaseCommand
 from bank_node.network.network_scanner import NetworkScanner
 from bank_node.robbery.greedy_strategy import GreedyStrategy
+from bank_node.utils.ip_helper import get_primary_local_ip, get_local_subnet_range
 
 class RPCommand(BaseCommand):
     """
@@ -29,22 +30,24 @@ class RPCommand(BaseCommand):
         target_amount = int(self.args[0])
         
         # Determine scan range
-        # For this implementation, we'll scan a small range around the local IP or a config range.
-        # Ideally, this should be configurable. 
-        # Let's check if config has network range, otherwise default to local subnet range.
-        
         network_config = self.bank.config_manager.get("network", {})
-        ip_range_start = network_config.get("scan_start", "127.0.0.1")
-        ip_range_end = network_config.get("scan_end", "127.0.0.5") # Default small range for testing
+        
+        ip_range_start = network_config.get("scan_start")
+        ip_range_end = network_config.get("scan_end")
+        
+        if not ip_range_start or not ip_range_end:
+            # Auto-detect subnet
+            current_ip = get_primary_local_ip()
+            ip_range_start, ip_range_end = get_local_subnet_range(current_ip)
+            
         scan_port = self.bank.config_manager.get("server", {}).get("port", 65525)
+        scanner_timeout = network_config.get("scanner_timeout", 2)
         
         # Initialize Scanner
-        scanner = NetworkScanner(port=scan_port, timeout=1) # Fast timeout for scanning
+        scanner = NetworkScanner(port=scan_port, timeout=scanner_timeout)
         
         # Scan
         # Note: This is a blocking operation and might take time.
-        # In a real async server, this should be offloaded. 
-        # But here our BaseCommand executes synchronously in the ClientHandler thread.
         active_banks = scanner.scan(ip_range_start, ip_range_end)
         
         # Plan
