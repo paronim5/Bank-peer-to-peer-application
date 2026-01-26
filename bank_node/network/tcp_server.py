@@ -29,13 +29,27 @@ class TcpServer:
         try:
             self.server_socket.bind((self.host, self.port))
             self.server_socket.listen(5)
+            self.server_socket.settimeout(1.0) # Set timeout to allow periodic checking of is_running
             self.is_running = True
-            print(f"TCP Server listening on {self.host}:{self.port}")
+            
+            # Resolve actual IP if binding to 0.0.0.0
+            display_host = self.host
+            if self.host == "0.0.0.0":
+                try:
+                     from bank_node.utils.ip_helper import get_primary_local_ip
+                     display_host = get_primary_local_ip()
+                except ImportError:
+                    pass
+
+            print(f"TCP Server listening on {self.host}:{self.port} (Actual: {display_host}:{self.port})")
 
             while self.is_running:
                 try:
                     client_socket, address = self.server_socket.accept()
                     self._handle_client(client_socket, address)
+                except socket.timeout:
+                    # Timeout reached, loop back to check is_running
+                    continue
                 except OSError:
                     # Socket closed or error
                     if self.is_running:

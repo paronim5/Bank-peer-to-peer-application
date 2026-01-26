@@ -29,6 +29,9 @@ class ACCommand(BaseCommand):
         server_config = self.bank.config_manager.get("server")
         if server_config and "ip" in server_config:
             ip_address = server_config["ip"]
+            if ip_address == "0.0.0.0":
+                from bank_node.utils.ip_helper import get_primary_local_ip
+                ip_address = get_primary_local_ip()
         else:
             ip_address = "127.0.0.1"
             
