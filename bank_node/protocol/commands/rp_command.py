@@ -1,72 +1,59 @@
-from typing import List, Tuple
+from typing import Any
 from bank_node.protocol.commands.base_command import BaseCommand
 from bank_node.network.network_scanner import NetworkScanner
-from robbery.dp_strategy import DpStrategy
-from robbery.greedy_strategy import GreedyStrategy
-from bank_node.core.config_manager import ConfigManager
+from bank_node.robbery.greedy_strategy import GreedyStrategy
 
 class RPCommand(BaseCommand):
     """
-    Implements the Robbery Plan (RP) command.
-    Scans the network for banks and plans a robbery to achieve the target amount.
+    Implements the RP (Robbery Plan) command.
+    Scans the network and plans a robbery.
     """
 
-    def validate_args(self) -> bool:
+    def validate_args(self) -> None:
         """
-        Validates the arguments. Expects exactly one argument: target_amount.
+        Validates the arguments for RP command.
+        Expects 1 arg: `target_amount` (integer).
         """
         if len(self.args) != 1:
-            return False
-        try:
-            amount = int(self.args[0])
-            if amount <= 0:
-                return False
-        except ValueError:
-            return False
-        return True
+            raise ValueError("Invalid arguments count. Usage: RP <target_amount>")
+        
+        amount_str = self.args[0]
+        if not amount_str.isdigit():
+            raise ValueError("Target amount must be a positive integer")
 
-    def execute_logic(self) -> str:
+    def execute_logic(self) -> Any:
         """
-        Executes the robbery planning logic.
+        Scans network and calculates robbery plan.
+        Returns: "RP <message>"
         """
         target_amount = int(self.args[0])
         
-        # Get configuration
-        config = ConfigManager()
-        # Default scan range (could be configured)
-        scan_start_ip = config.get("scan_start_ip", "127.0.0.1")
-        scan_end_ip = config.get("scan_end_ip", "127.0.0.1")
-        scan_port = config.get("server", {}).get("port", 65525)
+        # Determine scan range
+        # For this implementation, we'll scan a small range around the local IP or a config range.
+        # Ideally, this should be configurable. 
+        # Let's check if config has network range, otherwise default to local subnet range.
         
-        # Instantiate Scanner
-        scanner = NetworkScanner(port=scan_port)
+        network_config = self.bank.config_manager.get("network", {})
+        ip_range_start = network_config.get("scan_start", "127.0.0.1")
+        ip_range_end = network_config.get("scan_end", "127.0.0.5") # Default small range for testing
+        scan_port = self.bank.config_manager.get("server", {}).get("port", 65525)
         
-        # Scan network
-        # For the purpose of this command, we scan the configured range.
-        # If running locally with ports, this might only find self or nothing if ports differ.
-        # But we follow the architecture provided.
-        discovered_banks = scanner.scan(scan_start_ip, scan_end_ip)
+        # Initialize Scanner
+        scanner = NetworkScanner(port=scan_port, timeout=1) # Fast timeout for scanning
         
-        # Choose Strategy
-        strategy_type = config.get("robbery_strategy", "dp").lower()
-        if strategy_type == "greedy":
-            strategy = GreedyStrategy()
-        else:
-            strategy = DpStrategy()
-            
-        # Plan robbery
-        selected_banks, total_stolen, total_clients = strategy.plan(discovered_banks, target_amount)
+        # Scan
+        # Note: This is a blocking operation and might take time.
+        # In a real async server, this should be offloaded. 
+        # But here our BaseCommand executes synchronously in the ClientHandler thread.
+        active_banks = scanner.scan(ip_range_start, ip_range_end)
         
-        # Format response
+        # Plan
+        strategy = GreedyStrategy()
+        selected_banks, total_stolen, total_clients = strategy.plan(active_banks, target_amount)
+        
+        # Format Response
         if not selected_banks:
-            return f"RP To achieve {target_amount}, no plan could be formed."
+            return f"RP To achieve {target_amount}, no suitable banks found in range {ip_range_start}-{ip_range_end}."
             
-        bank_ips = [bank.ip for bank in selected_banks]
-        
-        # "rob banks A and B"
-        if len(bank_ips) == 1:
-            banks_str = f"bank {bank_ips[0]}"
-        else:
-            banks_str = f"banks {' and '.join(bank_ips)}"
-            
-        return f"RP To achieve {target_amount}, rob {banks_str}, affecting {total_clients} clients."
+        bank_ips = " and ".join([b.ip for b in selected_banks])
+        return f"RP To achieve {target_amount}, rob banks {bank_ips}, affecting only {total_clients} clients (Total: {total_stolen})."
