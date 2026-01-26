@@ -1,5 +1,11 @@
 import sys
 import os
+
+# Add project root to sys.path to ensure 'bank_node' package is resolvable
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
 import logging
 import time
 from bank_node.core.config_manager import ConfigManager
