@@ -1,13 +1,21 @@
 import socket
 import logging
 
+from bank_node.core.config_manager import ConfigManager
+
 class ProxyClient:
     """
     Handles outgoing connections to other bank nodes.
     """
     
-    def __init__(self, timeout: int = 5):
-        self.timeout = timeout
+    def __init__(self, timeout: int = None):
+        if timeout is not None:
+            self.timeout = timeout
+        else:
+            # Load from config or default to 15 seconds (increased from 5 for slower networks)
+            config = ConfigManager()
+            self.timeout = config.get("network", {}).get("timeout", 15)
+            
         self.logger = logging.getLogger("ProxyClient")
 
     def send_command(self, target_ip: str, port: int, command_string: str) -> str:
