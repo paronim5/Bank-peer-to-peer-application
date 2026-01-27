@@ -3,6 +3,7 @@ from bank_node.protocol.commands.base_command import BaseCommand
 from bank_node.protocol.validator import Validator
 from bank_node.utils.ip_helper import is_local_ip
 from bank_node.network.proxy_client import ProxyClient
+from bank_node.core.config_manager import ConfigManager
 
 class ADCommand(BaseCommand):
     """
@@ -84,11 +85,11 @@ class ADCommand(BaseCommand):
                  is_local = False
 
         if not is_local:
-            # Proxy logic
-            # Use clean IP for the remote command to ensure validation passes on remote end
             clean_account_id = f"{account_num}/{target_ip}"
             command_string = f"AD {clean_account_id} {amount}"
-            proxy = ProxyClient()
+            config = ConfigManager()
+            proxy_timeout = config.get("network", {}).get("proxy_timeout", 5.0)
+            proxy = ProxyClient(timeout=proxy_timeout)
             return proxy.send_command(target_ip, port, command_string)
 
         self.bank.deposit(account_num, amount)

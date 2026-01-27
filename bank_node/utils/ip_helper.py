@@ -1,4 +1,5 @@
 import socket
+import ipaddress
 from bank_node.core.config_manager import ConfigManager
 
 def is_local_ip(ip_address: str) -> bool:
@@ -42,19 +43,15 @@ def get_primary_local_ip() -> str:
         return "127.0.0.1"
 
 def get_local_subnet_range(ip: str) -> tuple[str, str]:
-    """
-    Returns the start and end IP of the /24 subnet for the given IP.
-    e.g. 192.168.0.4 -> (192.168.0.1, 192.168.0.254)
-    """
-    if ip == "127.0.0.1" or ip == "localhost":
-        return "127.0.0.1", "127.0.0.10" # Default small local range
-        
     try:
-        parts = ip.split('.')
-        if len(parts) != 4:
-            return "127.0.0.1", "127.0.0.10"
-            
-        base = ".".join(parts[:3])
-        return f"{base}.1", f"{base}.254"
+        config = ConfigManager()
+        network_cfg = config.get("network", {}) or {}
+        prefix = int(network_cfg.get("scan_cidr", 24))
+        addr = ipaddress.IPv4Address(ip)
+        network = ipaddress.IPv4Network(f"{addr}/{prefix}", strict=False)
+        hosts = list(network.hosts())
+        if not hosts:
+            return str(network.network_address), str(network.broadcast_address)
+        return str(hosts[0]), str(hosts[-1])
     except Exception:
         return "127.0.0.1", "127.0.0.10"

@@ -3,6 +3,7 @@ from bank_node.protocol.commands.base_command import BaseCommand
 from bank_node.protocol.validator import Validator
 from bank_node.utils.ip_helper import is_local_ip
 from bank_node.network.proxy_client import ProxyClient
+from bank_node.core.config_manager import ConfigManager
 
 class ABCommand(BaseCommand):
     """
@@ -69,10 +70,11 @@ class ABCommand(BaseCommand):
         logging.info(f"ABCommand: target={target_ip} provided_port={provided_port} is_local={is_local}")
 
         if not is_local:
-            # Proxy logic
             clean_account_id = f"{account_num}/{target_ip}"
             command_string = f"AB {clean_account_id}"
-            proxy = ProxyClient()
+            config = ConfigManager()
+            proxy_timeout = config.get("network", {}).get("proxy_timeout", 5.0)
+            proxy = ProxyClient(timeout=proxy_timeout)
             return proxy.send_command(target_ip, port, command_string)
         
         balance = self.bank.get_balance(account_num)

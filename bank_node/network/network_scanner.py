@@ -4,15 +4,18 @@ import logging
 from typing import List, Optional
 from bank_node.network.proxy_client import ProxyClient
 from bank_node.robbery.bank_info import BankInfo
+from bank_node.core.config_manager import ConfigManager
 
 class NetworkScanner:
     """
     Scans the network for other active bank nodes.
     """
 
-    def __init__(self, port: int = 65525, workers: int = 50, timeout: int = 1):
+    def __init__(self, port: int = 65525, workers: int = None, timeout: int = 1):
         self.port = port
-        self.workers = workers
+        config = ConfigManager()
+        network_cfg = config.get("network", {}) or {}
+        self.workers = workers if workers is not None else network_cfg.get("scan_workers", 50)
         self.timeout = timeout
         self.logger = logging.getLogger("NetworkScanner")
         self.proxy = ProxyClient(timeout=self.timeout)
