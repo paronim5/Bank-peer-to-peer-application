@@ -4,8 +4,8 @@
         "port": 65525
     },
     "network": {
-        "client_timeout": 60.0,
-        "proxy_timeout": 15.0,
+        "client_timeout": 120.0,
+        "proxy_timeout": 45.0,
         "scan_workers": 50,
         "scanner_timeout": 3.0
     },

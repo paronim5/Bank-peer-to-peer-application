@@ -12,3 +12,71 @@
 2026-01-27 09:04:56,670 - Main - INFO - Loaded 1 accounts.
 2026-01-27 09:04:56,670 - Main - INFO - AutoSaver initialized and subscribed to Bank events.
 2026-01-27 09:04:56,671 - Main - INFO - Starting TCP Server on 0.0.0.0:65525...
+2026-01-27 09:21:48,206 - root - INFO - Logging initialized.
+2026-01-27 09:21:48,206 - Main - INFO - Starting Bank Peer-to-Peer Node...
+2026-01-27 09:21:48,206 - Main - INFO - Using JSON persistence: bank_data.json
+2026-01-27 09:21:48,206 - Main - INFO - Loading data from bank_data.json...
+2026-01-27 09:21:48,223 - Main - INFO - Loaded 1 accounts.
+2026-01-27 09:21:48,223 - Main - INFO - AutoSaver initialized and subscribed to Bank events.
+2026-01-27 09:21:48,223 - Main - INFO - Starting TCP Server on 0.0.0.0:65525...
+2026-01-27 09:30:26,970 - Main - INFO - Received KeyboardInterrupt. Shutting down...
+2026-01-27 09:30:26,971 - Main - INFO - Application stopped.
+2026-01-27 09:30:33,914 - root - INFO - Logging initialized.
+2026-01-27 09:30:33,914 - Main - INFO - Starting Bank Peer-to-Peer Node...
+2026-01-27 09:30:33,914 - Main - INFO - Using JSON persistence: bank_data.json
+2026-01-27 09:30:33,914 - Main - INFO - Loading data from bank_data.json...
+2026-01-27 09:30:33,915 - Main - INFO - Loaded 2 accounts.
+2026-01-27 09:30:33,915 - Main - INFO - AutoSaver initialized and subscribed to Bank events.
+2026-01-27 09:30:33,915 - Main - INFO - Starting TCP Server on 0.0.0.0:65525...
+2026-01-27 09:32:15,569 - root - INFO - Logging initialized.
+2026-01-27 09:32:15,570 - Main - INFO - Starting Bank Peer-to-Peer Node...
+2026-01-27 09:32:15,570 - Main - INFO - Using JSON persistence: bank_data.json
+2026-01-27 09:32:15,570 - Main - INFO - Loading data from bank_data.json...
+2026-01-27 09:32:15,570 - Main - INFO - Loaded 2 accounts.
+2026-01-27 09:32:15,570 - Main - INFO - AutoSaver initialized and subscribed to Bank events.
+2026-01-27 09:32:15,570 - Main - INFO - Starting TCP Server on 0.0.0.0:65525...
+2026-01-27 09:32:35,028 - Main - INFO - Application stopped.
+2026-01-27 09:32:39,975 - root - INFO - Logging initialized.
+2026-01-27 09:32:39,976 - Main - INFO - Starting Bank Peer-to-Peer Node...
+2026-01-27 09:32:39,976 - Main - INFO - Using JSON persistence: bank_data.json
+2026-01-27 09:32:39,976 - Main - INFO - Loading data from bank_data.json...
+2026-01-27 09:32:39,976 - Main - INFO - Loaded 2 accounts.
+2026-01-27 09:32:39,976 - Main - INFO - AutoSaver initialized and subscribed to Bank events.
+2026-01-27 09:32:39,976 - Main - INFO - Starting TCP Server on 0.0.0.0:65525...
+2026-01-27 09:32:55,296 - Main - INFO - Application stopped.
+2026-01-27 09:33:39,968 - root - INFO - Logging initialized.
+2026-01-27 09:33:39,968 - Main - INFO - Starting Bank Peer-to-Peer Node...
+2026-01-27 09:33:39,968 - Main - INFO - Using JSON persistence: bank_data.json
+2026-01-27 09:33:39,968 - Main - INFO - Loading data from bank_data.json...
+2026-01-27 09:33:39,968 - Main - INFO - Loaded 2 accounts.
+2026-01-27 09:33:39,968 - Main - INFO - AutoSaver initialized and subscribed to Bank events.
+2026-01-27 09:33:39,968 - Main - INFO - Starting TCP Server on 0.0.0.0:65525...
+2026-01-27 09:36:53,083 - root - INFO - Logging initialized.
+2026-01-27 09:36:53,083 - Main - INFO - Starting Bank Peer-to-Peer Node...
+2026-01-27 09:36:53,083 - Main - INFO - Using JSON persistence: bank_data.json
+2026-01-27 09:36:53,083 - Main - INFO - Loading data from bank_data.json...
+2026-01-27 09:36:53,084 - Main - INFO - Loaded 2 accounts.
+2026-01-27 09:36:53,084 - Main - INFO - AutoSaver initialized and subscribed to Bank events.
+2026-01-27 09:36:53,084 - Main - INFO - Starting TCP Server on 0.0.0.0:65525...
+2026-01-27 09:37:43,317 - ProxyClient - INFO - Attempting to connect to 10.64.0.66:65525 (Timeout: 45.0s)...
+2026-01-27 09:38:04,351 - ProxyClient - ERROR - Timeout connecting to 10.64.0.66:65525 after 45.0s
+2026-01-27 09:42:02,546 - Main - CRITICAL - Unexpected error: [Errno 22] Invalid argument
+Traceback (most recent call last):
+  File "C:\Users\paron\.a.paroniim\Spse Jecna\c4b\Python1\portfolio projects\Bank pear to pear application\Bank-peer-to-peer-application\bank_node\network\tcp_server.py", line 52, in start
+    continue
+KeyboardInterrupt
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\paron\.a.paroniim\Spse Jecna\c4b\Python1\portfolio projects\Bank pear to pear application\Bank-peer-to-peer-application\bank_node\main.py", line 90, in main
+    server.start()
+    ~~~~~~~~~~~~^^
+  File "C:\Users\paron\.a.paroniim\Spse Jecna\c4b\Python1\portfolio projects\Bank pear to pear application\Bank-peer-to-peer-application\bank_node\network\tcp_server.py", line 61, in start
+    self.stop()
+    ~~~~~~~~~^^
+  File "C:\Users\paron\.a.paroniim\Spse Jecna\c4b\Python1\portfolio projects\Bank pear to pear application\Bank-peer-to-peer-application\bank_node\network\tcp_server.py", line 109, in stop
+    print("TCP Server stopped.")
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 22] Invalid argument
+2026-01-27 09:42:02,555 - Main - INFO - Application stopped.
