@@ -54,6 +54,20 @@ class ClientHandler(threading.Thread):
         self.factory.register_command(CommandType.BN.value, BNCommand)
         self.factory.register_command(CommandType.RP.value, RPCommand)
 
+    def _clean_telnet_input(self, text: str) -> str:
+        """
+        Processes backspace characters in the input string.
+        Handles both \b (0x08) and DEL (0x7F).
+        """
+        result = []
+        for char in text:
+            if char == '\x08' or char == '\x7f':
+                if result:
+                    result.pop()
+            else:
+                result.append(char)
+        return "".join(result)
+
     def run(self):
         """
         Main loop to receive and process data from the client.
@@ -82,6 +96,9 @@ class ClientHandler(threading.Thread):
                         # Handle Windows line endings (\r\n) by stripping \r
                         message = message.rstrip('\r')
                         
+                        # Handle Telnet backspaces
+                        message = self._clean_telnet_input(message)
+                        
                         if not message.strip():
                             # Ignore empty lines (keep-alives or stray newlines)
                             continue
@@ -91,7 +108,7 @@ class ClientHandler(threading.Thread):
                         
                         if response:
                             self.logger.debug(f"Sending: {response}")
-                            self.client_socket.sendall((response + '\n').encode('utf-8'))
+                            self.client_socket.sendall((response + '\r\n').encode('utf-8'))
                             
                 except socket.timeout:
                     self.logger.warning(f"Connection from {self.address} timed out.")

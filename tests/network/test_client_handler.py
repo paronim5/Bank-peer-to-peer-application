@@ -47,7 +47,7 @@ class TestClientHandler(unittest.TestCase):
             # Verify
             self.mock_socket.recv.assert_called()
             mock_process.assert_called_with("BC")
-            self.mock_socket.sendall.assert_called_with(b"BC 127.0.0.1\n")
+            self.mock_socket.sendall.assert_called_with(b"BC 127.0.0.1\r\n")
             self.mock_socket.close.assert_called_once()
 
     def test_buffer_handling(self):
@@ -59,7 +59,7 @@ class TestClientHandler(unittest.TestCase):
             self.handler.run()
             
             mock_process.assert_called_with("BC")
-            self.mock_socket.sendall.assert_called_with(b"OK\n")
+            self.mock_socket.sendall.assert_called_with(b"OK\r\n")
 
     def test_windows_line_endings(self):
         self.handler.running = True
@@ -70,7 +70,30 @@ class TestClientHandler(unittest.TestCase):
             self.handler.run()
             
             mock_process.assert_called_with("BC")
-            self.mock_socket.sendall.assert_called_with(b"OK\n")
+            self.mock_socket.sendall.assert_called_with(b"OK\r\n")
+
+    def test_telnet_backspace_handling(self):
+        self.handler.running = True
+        # Simulate typing "AD", then Backspace, then "C" -> "AC"
+        # \x08 is Backspace
+        self.mock_socket.recv.side_effect = [b"AD\x08C\n", b""]
+        
+        with patch.object(self.handler, '_process_message', return_value="OK") as mock_process:
+            self.handler.run()
+            
+            mock_process.assert_called_with("AC")
+            self.mock_socket.sendall.assert_called_with(b"OK\r\n")
+
+    def test_telnet_delete_handling(self):
+        self.handler.running = True
+        # Simulate typing "AD", then Delete (0x7f), then "C" -> "AC"
+        self.mock_socket.recv.side_effect = [b"AD\x7fC\n", b""]
+        
+        with patch.object(self.handler, '_process_message', return_value="OK") as mock_process:
+            self.handler.run()
+            
+            mock_process.assert_called_with("AC")
+            self.mock_socket.sendall.assert_called_with(b"OK\r\n")
 
 if __name__ == '__main__':
     unittest.main()
