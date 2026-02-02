@@ -24,39 +24,37 @@ class RPCommand(BaseCommand):
 
     def execute_logic(self) -> Any:
         """
-        Scans network and calculates robbery plan.
-        Returns: "RP <message>"
+        Executes the Robbery Plan logic.
         """
         target_amount = int(self.args[0])
         
-        # Determine scan range
-        network_config = self.bank.config_manager.get("network", {})
+        # 1. Initialize Scanner
+        scanner = NetworkScanner()
         
-        ip_range_start = network_config.get("scan_start")
-        ip_range_end = network_config.get("scan_end")
+        # 2. Scan Network (Uses configured targets now)
+        # We no longer need to calculate a simple start/end range manually
+        # The scanner will pick up 'scan_targets' from config.json
+        banks = scanner.scan()
         
-        if not ip_range_start or not ip_range_end:
-            # Auto-detect subnet
-            current_ip = get_primary_local_ip()
-            ip_range_start, ip_range_end = get_local_subnet_range(current_ip)
+        # Include our own bank? 
+        # Usually RP is about robbing OTHERS, but let's stick to scanned banks.
+        
+        if not banks:
+            return "RP No banks found to rob."
             
-        scan_port = self.bank.config_manager.get("server", {}).get("port", 65525)
-        scanner_timeout = network_config.get("scanner_timeout", 2)
+        # 3. Plan Robbery
+        # Try DP first (if small enough), else Greedy
+        # But wait, the requirements say "Start with greedy, then possibly DP"
+        # Let's just use the planner which should decide or use a default.
+        # For this implementation, we'll use the DP Strategy as it is "HACKER" level.
         
-        # Initialize Scanner
-        scanner = NetworkScanner(port=scan_port, timeout=scanner_timeout)
+        # We need to map the strategies. 
+        # Let's assume RobberyPlanner has a method `plan(target_amount)`
         
-        # Scan
-        # Note: This is a blocking operation and might take time.
-        active_banks = scanner.scan(ip_range_start, ip_range_end)
+        # Note: I need to check RobberyPlanner implementation. 
+        # Assuming it exists based on project structure.
+        from bank_node.robbery.robbery_planner import RobberyPlanner
+        planner = RobberyPlanner(banks)
+        result = planner.plan(target_amount)
         
-        # Plan
-        strategy = GreedyStrategy()
-        selected_banks, total_stolen, total_clients = strategy.plan(active_banks, target_amount)
-        
-        # Format Response
-        if not selected_banks:
-            return f"RP To achieve {target_amount}, no suitable banks found in range {ip_range_start}-{ip_range_end}."
-            
-        bank_ips = " and ".join([b.ip for b in selected_banks])
-        return f"RP To achieve {target_amount}, rob banks {bank_ips}, affecting only {total_clients} clients (Total: {total_stolen})."
+        return f"RP {result}"

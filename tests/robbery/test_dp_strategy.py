@@ -1,10 +1,10 @@
 import unittest
-from robbery.bank_info import BankInfo
-from robbery.dp_strategy import DpStrategy
+from bank_node.robbery.bank_info import BankInfo
+from bank_node.robbery.dp_strategy import DPStrategy
 
 class TestDpStrategy(unittest.TestCase):
     def setUp(self):
-        self.strategy = DpStrategy()
+        self.strategy = DPStrategy()
 
     def test_plan_basic_knapsack(self):
         # Classic knapsack
@@ -16,9 +16,9 @@ class TestDpStrategy(unittest.TestCase):
         # (C is 4000, less than 5000. A+C=6000 > 5000. B+C=7000 > 5000)
         
         banks = [
-            BankInfo("A", 2000, 10),
-            BankInfo("B", 3000, 20),
-            BankInfo("C", 4000, 30)
+            BankInfo("A", 65525, 2000, 10),
+            BankInfo("B", 65525, 3000, 20),
+            BankInfo("C", 65525, 4000, 30)
         ]
         
         selected, total_stolen, total_clients = self.strategy.plan(banks, 5000)
@@ -36,8 +36,8 @@ class TestDpStrategy(unittest.TestCase):
         # Should pick B.
         
         banks = [
-            BankInfo("A", 1000, 100),
-            BankInfo("B", 1000, 10)
+            BankInfo("A", 65525, 1000, 100),
+            BankInfo("B", 65525, 1000, 10)
         ]
         
         selected, total_stolen, total_clients = self.strategy.plan(banks, 1000)
@@ -54,9 +54,9 @@ class TestDpStrategy(unittest.TestCase):
         # Should pick A and B.
         
         banks = [
-            BankInfo("A", 50, 1),
-            BankInfo("B", 50, 1),
-            BankInfo("C", 100, 5)
+            BankInfo("A", 65525, 50, 1),
+            BankInfo("B", 65525, 50, 1),
+            BankInfo("C", 65525, 100, 5)
         ]
         
         selected, total_stolen, total_clients = self.strategy.plan(banks, 100)
@@ -76,9 +76,9 @@ class TestDpStrategy(unittest.TestCase):
         # Optimal: B + C = 220.
         
         banks = [
-            BankInfo("A", 60, 1),
-            BankInfo("B", 100, 10),
-            BankInfo("C", 120, 30)
+            BankInfo("A", 65525, 60, 1),
+            BankInfo("B", 65525, 100, 10),
+            BankInfo("C", 65525, 120, 30)
         ]
         
         selected, total_stolen, total_clients = self.strategy.plan(banks, 220)
@@ -88,7 +88,7 @@ class TestDpStrategy(unittest.TestCase):
         self.assertEqual(ips, ["B", "C"])
 
     def test_no_solution_fits(self):
-        banks = [BankInfo("A", 1000, 10)]
+        banks = [BankInfo("A", 65525, 1000, 10)]
         selected, total_stolen, total_clients = self.strategy.plan(banks, 500)
         self.assertEqual(total_stolen, 0)
         self.assertEqual(len(selected), 0)

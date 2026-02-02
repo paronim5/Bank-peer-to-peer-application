@@ -58,7 +58,8 @@ class ClientHandler(threading.Thread):
         """
         Main loop to receive and process data from the client.
         """
-        print(f"Connection from {self.address} established.")
+        self.logger = logging.getLogger(f"ClientHandler-{self.address[0]}:{self.address[1]}")
+        self.logger.info(f"Connection from {self.address} established.")
         
         try:
             while self.running:
@@ -66,50 +67,68 @@ class ClientHandler(threading.Thread):
                     data = self.client_socket.recv(1024)
                     if not data:
                         # Client disconnected
+                        self.logger.info(f"Client {self.address} disconnected.")
                         break
                     
-                    self.buffer += data.decode('utf-8')
+                    try:
+                        self.buffer += data.decode('utf-8')
+                    except UnicodeDecodeError as e:
+                        self.logger.warning(f"Decoding error from {self.address}: {e}")
+                        continue
                     
                     # Process complete messages delimited by newline
                     while '\n' in self.buffer:
                         message, self.buffer = self.buffer.split('\n', 1)
+                        # Handle Windows line endings (\r\n) by stripping \r
+                        message = message.rstrip('\r')
+                        
+                        if not message.strip():
+                            # Ignore empty lines (keep-alives or stray newlines)
+                            continue
+
+                        self.logger.debug(f"Received: {message}")
                         response = self._process_message(message)
+                        
                         if response:
+                            self.logger.debug(f"Sending: {response}")
                             self.client_socket.sendall((response + '\n').encode('utf-8'))
                             
                 except socket.timeout:
-                    # Handle timeout - maybe just continue or close?
-                    # For now, we'll close the connection on timeout to free resources
-                    print(f"Connection from {self.address} timed out.")
+                    self.logger.warning(f"Connection from {self.address} timed out.")
                     break
                     
         except ConnectionResetError:
-            print(f"Connection from {self.address} reset.")
+            self.logger.info(f"Connection from {self.address} reset.")
         except Exception as e:
-            print(f"Error handling client {self.address}: {e}")
+            self.logger.error(f"Error handling client {self.address}: {e}", exc_info=True)
         finally:
             self.client_socket.close()
-            print(f"Connection from {self.address} closed.")
+            self.logger.info(f"Connection from {self.address} closed.")
 
     def _process_message(self, message: str) -> str:
         """
         Parses and executes a single message.
         """
         try:
-            if not message.strip():
-                return "Invalid command"
-
             command_code, args = CommandParser.parse(message)
             
             if not command_code:
-                return "Invalid command format"
+                self.logger.warning(f"Invalid command format received: '{message}'")
+                return "ER Invalid command format"
             
             command = self.factory.get_command(command_code, args)
             
             if command:
-                return command.execute()
+                try:
+                    result = command.execute()
+                    return result
+                except Exception as exec_err:
+                    self.logger.error(f"Command execution error for '{message}': {exec_err}", exc_info=True)
+                    return f"ER Execution failed: {str(exec_err)}"
             else:
-                return "Unknown command"
+                self.logger.warning(f"Unknown command received: '{command_code}'")
+                return f"ER Unknown command: {command_code}"
                 
         except Exception as e:
-            return f"Error executing command: {str(e)}"
+            self.logger.error(f"Unexpected error processing message '{message}': {e}", exc_info=True)
+            return f"ER Internal error: {str(e)}"

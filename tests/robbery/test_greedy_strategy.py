@@ -1,6 +1,6 @@
 import unittest
-from robbery.bank_info import BankInfo
-from robbery.greedy_strategy import GreedyStrategy
+from bank_node.robbery.bank_info import BankInfo
+from bank_node.robbery.greedy_strategy import GreedyStrategy
 
 class TestGreedyStrategy(unittest.TestCase):
     def setUp(self):
@@ -11,9 +11,9 @@ class TestGreedyStrategy(unittest.TestCase):
         # Bank B: 500 / 2 = 250 (Highest Ratio)
         # Bank C: 2000 / 50 = 40
         banks = [
-            BankInfo("1.1.1.1", 1000, 10),
-            BankInfo("1.1.1.2", 500, 2),
-            BankInfo("1.1.1.3", 2000, 50)
+            BankInfo("1.1.1.1", 65525, 1000, 10),
+            BankInfo("1.1.1.2", 65525, 500, 2),
+            BankInfo("1.1.1.3", 65525, 2000, 50)
         ]
         
         # Target 1600
@@ -33,13 +33,13 @@ class TestGreedyStrategy(unittest.TestCase):
         self.assertEqual(selected[1].ip, "1.1.1.1")
 
     def test_plan_exact_match(self):
-        banks = [BankInfo("1.1.1.1", 1000, 10)]
+        banks = [BankInfo("1.1.1.1", 65525, 1000, 10)]
         selected, total_stolen, total_clients = self.strategy.plan(banks, 1000)
         self.assertEqual(len(selected), 1)
         self.assertEqual(total_stolen, 1000)
 
     def test_plan_none_fit(self):
-        banks = [BankInfo("1.1.1.1", 1000, 10)]
+        banks = [BankInfo("1.1.1.1", 65525, 1000, 10)]
         selected, total_stolen, total_clients = self.strategy.plan(banks, 500)
         self.assertEqual(len(selected), 0)
         self.assertEqual(total_stolen, 0)
@@ -52,8 +52,8 @@ class TestGreedyStrategy(unittest.TestCase):
     def test_plan_zero_clients_ratio(self):
         # Handle division by zero case in BankInfo (ratio 0.0)
         banks = [
-            BankInfo("1.1.1.1", 1000, 0), # Ratio 0
-            BankInfo("1.1.1.2", 100, 1)   # Ratio 100
+            BankInfo("1.1.1.1", 65525, 1000, 0), # Ratio 0
+            BankInfo("1.1.1.2", 65525, 100, 1)   # Ratio 100
         ]
         # Should pick B first
         selected, total_stolen, total_clients = self.strategy.plan(banks, 2000)

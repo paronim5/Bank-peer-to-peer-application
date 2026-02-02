@@ -20,38 +20,60 @@ class NetworkScanner:
         self.logger = logging.getLogger("NetworkScanner")
         self.proxy = ProxyClient(timeout=self.timeout)
 
-    def scan(self, ip_range_start: str, ip_range_end: str) -> List[BankInfo]:
+    def scan(self, targets: List[str] = None) -> List[BankInfo]:
         """
-        Scans a range of IPs to find active banks.
-        Returns a list of BankInfo objects.
+        Scans a list of CIDR ranges or IPs to find active banks.
+        Args:
+            targets: List of strings, e.g., ["10.0.0.0/24", "192.168.1.50"]
+                     If None, loads 'scan_targets' from config.
+        Returns:
+            List of BankInfo objects.
         """
         active_banks: List[BankInfo] = []
         
+        if targets is None:
+            config = ConfigManager()
+            network_cfg = config.get("network", {})
+            # Default to a safe local scan if nothing configured
+            targets = network_cfg.get("scan_targets", ["127.0.0.1"])
+
+        self.logger.info(f"Starting network scan on targets: {targets}")
+        
         try:
-            start_ip = ipaddress.IPv4Address(ip_range_start)
-            end_ip = ipaddress.IPv4Address(ip_range_end)
-            
-            # Generate IP list
-            ips_to_scan = [str(ipaddress.IPv4Address(ip)) for ip in range(int(start_ip), int(end_ip) + 1)]
-            
-            self.logger.info(f"Scanning {len(ips_to_scan)} IPs from {ip_range_start} to {ip_range_end}...")
-            
             with concurrent.futures.ThreadPoolExecutor(max_workers=self.workers) as executor:
-                # Map IPs to the check_bank method
-                future_to_ip = {executor.submit(self._check_bank, ip): ip for ip in ips_to_scan}
+                futures = {}
                 
-                for future in concurrent.futures.as_completed(future_to_ip):
-                    ip = future_to_ip[future]
+                for target in targets:
+                    try:
+                        # Handle CIDR (e.g., 10.0.0.0/24) or single IP
+                        if "/" in target:
+                            network = ipaddress.IPv4Network(target, strict=False)
+                            self.logger.info(f"Queueing scan for network {target} ({network.num_addresses} hosts)...")
+                            for ip in network.hosts():
+                                futures[executor.submit(self._check_bank, str(ip))] = str(ip)
+                        else:
+                            # Single IP
+                            futures[executor.submit(self._check_bank, target)] = target
+                            
+                    except ValueError as e:
+                        self.logger.error(f"Invalid target format '{target}': {e}")
+
+                self.logger.info(f"Waiting for {len(futures)} scan tasks to complete...")
+                
+                for future in concurrent.futures.as_completed(futures):
+                    ip = futures[future]
                     try:
                         bank_info = future.result()
                         if bank_info:
                             active_banks.append(bank_info)
                     except Exception as e:
-                        self.logger.error(f"Error scanning {ip}: {e}")
+                        # Log at debug to avoid flooding logs with "Connection refused"
+                        self.logger.debug(f"Scan result for {ip}: {e}")
                         
         except Exception as e:
             self.logger.error(f"Scan failed: {e}")
 
+        self.logger.info(f"Scan complete. Found {len(active_banks)} active banks.")
         return active_banks
 
     def _check_bank(self, ip: str) -> Optional[BankInfo]:

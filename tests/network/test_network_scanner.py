@@ -7,7 +7,7 @@ class TestNetworkScanner(unittest.TestCase):
     def setUp(self):
         self.scanner = NetworkScanner()
         # Mock the proxy client
-        self.scanner.proxy_client = MagicMock()
+        self.scanner.proxy = MagicMock()
 
     def test_probe_node_success(self):
         # Setup mock responses
@@ -20,9 +20,9 @@ class TestNetworkScanner(unittest.TestCase):
                 return "BN 50"
             return "ER"
             
-        self.scanner.proxy_client.send_command.side_effect = side_effect
+        self.scanner.proxy.send_command.side_effect = side_effect
         
-        result = self.scanner._probe_node("192.168.1.5")
+        result = self.scanner._check_bank("192.168.1.5")
         
         self.assertIsNotNone(result)
         self.assertEqual(result.ip, "192.168.1.5")
@@ -31,9 +31,9 @@ class TestNetworkScanner(unittest.TestCase):
 
     def test_probe_node_not_a_bank(self):
         # BC fails
-        self.scanner.proxy_client.send_command.return_value = "ER Connection failed"
+        self.scanner.proxy.send_command.return_value = "ER Connection failed"
         
-        result = self.scanner._probe_node("192.168.1.5")
+        result = self.scanner._check_bank("192.168.1.5")
         self.assertIsNone(result)
 
     def test_probe_node_partial_failure(self):
@@ -47,16 +47,16 @@ class TestNetworkScanner(unittest.TestCase):
                 return "BN garbage"
             return "ER"
             
-        self.scanner.proxy_client.send_command.side_effect = side_effect
+        self.scanner.proxy.send_command.side_effect = side_effect
         
-        result = self.scanner._probe_node("192.168.1.5")
+        result = self.scanner._check_bank("192.168.1.5")
         
         self.assertIsNotNone(result)
         self.assertEqual(result.ip, "192.168.1.5")
         self.assertEqual(result.total_amount, 0)
         self.assertEqual(result.num_clients, 0)
 
-    def test_scan_range(self):
+    def test_scan_targets(self):
         # Mock proxy_client side_effect for multiple IPs
         def side_effect(ip, port, cmd):
             if ip == "192.168.1.1":
@@ -71,9 +71,10 @@ class TestNetworkScanner(unittest.TestCase):
                 if cmd == "BN": return "BN 5"
             return "ER"
 
-        self.scanner.proxy_client.send_command.side_effect = side_effect
+        self.scanner.proxy.send_command.side_effect = side_effect
         
-        results = self.scanner.scan("192.168.1.1", "192.168.1.3")
+        # Test with explicit targets list
+        results = self.scanner.scan(targets=["192.168.1.1", "192.168.1.2", "192.168.1.3"])
         
         # Should find 2 banks (1.1 and 1.3)
         self.assertEqual(len(results), 2)

@@ -61,5 +61,16 @@ class TestClientHandler(unittest.TestCase):
             mock_process.assert_called_with("BC")
             self.mock_socket.sendall.assert_called_with(b"OK\n")
 
+    def test_windows_line_endings(self):
+        self.handler.running = True
+        # Message with \r\n
+        self.mock_socket.recv.side_effect = [b"BC\r\n", b""]
+        
+        with patch.object(self.handler, '_process_message', return_value="OK") as mock_process:
+            self.handler.run()
+            
+            mock_process.assert_called_with("BC")
+            self.mock_socket.sendall.assert_called_with(b"OK\n")
+
 if __name__ == '__main__':
     unittest.main()
