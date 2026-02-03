@@ -95,5 +95,16 @@ class TestClientHandler(unittest.TestCase):
             mock_process.assert_called_with("AC")
             self.mock_socket.sendall.assert_called_with(b"OK\r\n")
 
+    def test_ansi_stripping(self):
+        self.handler.running = True
+        # Simulate typing "A", then Left Arrow (\x1b[D), then "B" -> "AB" (ignoring the arrow)
+        self.mock_socket.recv.side_effect = [b"A\x1b[DB\n", b""]
+        
+        with patch.object(self.handler, '_process_message', return_value="OK") as mock_process:
+            self.handler.run()
+            
+            mock_process.assert_called_with("AB")
+            self.mock_socket.sendall.assert_called_with(b"OK\r\n")
+
 if __name__ == '__main__':
     unittest.main()

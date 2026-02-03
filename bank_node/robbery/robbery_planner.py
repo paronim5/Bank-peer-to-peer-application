@@ -38,6 +38,17 @@ class RobberyPlanner:
             selected_banks, total_stolen, total_clients = self.greedy.plan(self.banks, target_amount)
             
         if not selected_banks:
+            # Check if there are ANY banks at all
+            if not self.banks:
+                return f"To achieve {target_amount}, no suitable banks found (Network scan empty)."
+
+            # Check if any single bank is greater than target (which caused rejection in strict mode)
+            # Find the smallest bank > target
+            candidates = [b for b in self.banks if b.total_amount > target_amount]
+            if candidates:
+                best_candidate = min(candidates, key=lambda b: b.total_amount)
+                return f"To achieve {target_amount}, no suitable subset found (strict <= limit). Suggestion: Rob {best_candidate.ip} alone to get ${best_candidate.total_amount}."
+            
             return f"To achieve {target_amount}, no suitable banks found."
 
         bank_ips = " and ".join([b.ip for b in selected_banks])

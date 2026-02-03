@@ -1,6 +1,7 @@
 import threading
 import socket
 import logging
+import re
 from typing import Tuple
 
 from bank_node.core.bank import Bank
@@ -58,7 +59,12 @@ class ClientHandler(threading.Thread):
         """
         Processes backspace characters in the input string.
         Handles both \b (0x08) and DEL (0x7F).
+        Also strips ANSI escape sequences to prevent garbage from arrow/delete keys.
         """
+        # Strip ANSI escape sequences
+        ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+        text = ansi_escape.sub('', text)
+
         result = []
         for char in text:
             if char == '\x08' or char == '\x7f':
@@ -108,6 +114,8 @@ class ClientHandler(threading.Thread):
                         
                         if response:
                             self.logger.debug(f"Sending: {response}")
+                            # Normalize line endings to CRLF for Telnet clients
+                            response = response.replace('\r\n', '\n').replace('\n', '\r\n')
                             self.client_socket.sendall((response + '\r\n').encode('utf-8'))
                             
                 except socket.timeout:
