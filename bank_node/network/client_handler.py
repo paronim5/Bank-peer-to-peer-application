@@ -19,7 +19,6 @@ from bank_node.protocol.commands.ab_command import ABCommand
 from bank_node.protocol.commands.ar_command import ARCommand
 from bank_node.protocol.commands.ba_command import BACommand
 from bank_node.protocol.commands.bn_command import BNCommand
-from bank_node.protocol.commands.rp_command import RPCommand
 
 class ClientHandler(threading.Thread):
     """
@@ -53,7 +52,6 @@ class ClientHandler(threading.Thread):
         self.factory.register_command(CommandType.AR.value, ARCommand)
         self.factory.register_command(CommandType.BA.value, BACommand)
         self.factory.register_command(CommandType.BN.value, BNCommand)
-        self.factory.register_command(CommandType.RP.value, RPCommand)
 
     def _clean_telnet_input(self, text: str) -> str:
         """

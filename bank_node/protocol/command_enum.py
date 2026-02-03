@@ -12,7 +12,6 @@ class CommandType(Enum):
     AR = "AR" # Account Remove?
     BA = "BA" # Bank Amount? (Total capital)
     BN = "BN" # Bank Number? (Client count)
-    RP = "RP" # Robbery Protocol?
 
     @staticmethod
     def is_valid(command: str) -> bool:
