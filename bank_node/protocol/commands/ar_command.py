@@ -1,6 +1,8 @@
 from typing import Any
 from bank_node.protocol.commands.base_command import BaseCommand
 from bank_node.protocol.validator import Validator
+from bank_node.utils.ip_helper import is_local_ip
+from bank_node.network.proxy_client import ProxyClient
 
 class ARCommand(BaseCommand):
     """
@@ -42,15 +44,34 @@ class ARCommand(BaseCommand):
     def execute_logic(self) -> Any:
         """
         Removes the specified account.
+        If the IP is local, removes locally.
+        If the IP is remote, forwards the command.
         Returns: "AR"
         """
         account_id = self.args[0]
         account_num = int(account_id.split("/")[0])
+        ip_address = account_id.split("/")[1]
         
-        try:
-            # We use the bank's remove_account method which handles balance check safely
-            self.bank.remove_account(account_num)
-            return "AR"
-        except ValueError as e:
-            # Re-raise to be handled by BaseCommand
-            raise ValueError(str(e))
+        if is_local_ip(ip_address):
+            try:
+                # We use the bank's remove_account method which handles balance check safely
+                self.bank.remove_account(account_num)
+                return "AR"
+            except ValueError as e:
+                # Re-raise to be handled by BaseCommand
+                raise ValueError(str(e))
+        else:
+            # Forward to remote bank
+            try:
+                client = ProxyClient()
+                # We send the same command "AR <account_id>" to the remote
+                # The remote will parse it, see the IP is local to itself, and execute.
+                # Assuming default port 65525 as we don't have port info in AR command
+                # Ideally we should look up port from known peers, but standard is 65525
+                response = client.send_command(ip_address, 65525, f"AR {account_id}")
+                
+                if response.startswith("ER"):
+                    raise ValueError(response[3:]) # Strip "ER "
+                return response
+            except Exception as e:
+                 raise ValueError(f"Remote execution failed: {str(e)}")

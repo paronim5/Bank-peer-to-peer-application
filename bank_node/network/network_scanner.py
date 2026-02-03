@@ -5,6 +5,7 @@ from typing import List, Optional
 from bank_node.network.proxy_client import ProxyClient
 from bank_node.robbery.bank_info import BankInfo
 from bank_node.core.config_manager import ConfigManager
+from bank_node.utils.ip_helper import get_primary_local_ip, get_local_subnet_range
 
 class NetworkScanner:
     """
@@ -35,7 +36,21 @@ class NetworkScanner:
             config = ConfigManager()
             network_cfg = config.get("network", {})
             # Default to a safe local scan if nothing configured
-            targets = network_cfg.get("scan_targets", ["127.0.0.1"])
+            targets = network_cfg.get("scan_targets", [])
+            
+            if not targets:
+                 # If config is empty, default to scanning local subnet + localhost
+                 local_ip = get_primary_local_ip()
+                 # Assuming /24 for local subnet if not specified
+                 # We can use the helper to get a CIDR string or just a range
+                 # But NetworkScanner supports CIDR string.
+                 # Let's construct a CIDR based on local IP.
+                 if local_ip and local_ip != "127.0.0.1":
+                     # Simple heuristic: assume /24
+                     subnet = ".".join(local_ip.split(".")[:3]) + ".0/24"
+                     targets = [subnet, "127.0.0.1"]
+                 else:
+                     targets = ["127.0.0.1"]
 
         self.logger.info(f"Starting network scan on targets: {targets}")
         
