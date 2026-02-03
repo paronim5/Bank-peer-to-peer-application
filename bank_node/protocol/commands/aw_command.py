@@ -8,12 +8,21 @@ from bank_node.core.config_manager import ConfigManager
 class AWCommand(BaseCommand):
     """
     Implements the AW (Account Withdraw) command.
+
+    Handles withdrawing money from an account. Supports both local withdrawals
+    and forwarding withdrawal requests to remote bank nodes.
     """
 
     def validate_args(self) -> None:
         """
-        Validates the arguments for AW command.
-        Expects 2 args: `account_id` (format `num/ip`) and `amount`.
+        Validate the arguments for the AW command.
+
+        Expects exactly 2 arguments:
+        1. `account_id` in the format `<number>/<ip>` (e.g., "12345/192.168.1.1").
+        2. `amount` as a positive integer.
+
+        Raises:
+            ValueError: If argument count is wrong, formats are invalid, or values are out of range.
         """
         if len(self.args) != 2:
             raise ValueError("Invalid arguments count. Usage: AW <account_id> <amount>")
@@ -57,7 +66,20 @@ class AWCommand(BaseCommand):
 
     def execute_logic(self) -> Any:
         """
-        Withdraws money from the specified account.
+        Execute the AW command logic.
+
+        If the target account is local, attempts to withdraw the amount.
+        If the target account is remote, forwards the command via `ProxyClient`.
+
+        Returns:
+            str: "AW" on success, or the response from the remote node.
+
+        Raises:
+            ValueError: If funds are insufficient or account is invalid (local only).
+
+        Side Effects:
+            - Modifies account balance (local).
+            - Initiates network connection (remote).
         """
         account_id = self.args[0]
         amount = int(self.args[1])
@@ -106,4 +128,16 @@ class AWCommand(BaseCommand):
             raise ValueError(str(e))
 
     def format_error(self, message: str) -> str:
+        """
+        Format an error response for the AW command.
+
+        Overrides base method to ensure "ER" prefix matches protocol specs if needed.
+        (Though base uses ERR, we might want consistency).
+
+        Args:
+            message (str): The error message.
+
+        Returns:
+            str: The formatted error string "ER <message>".
+        """
         return f"ER {message}"

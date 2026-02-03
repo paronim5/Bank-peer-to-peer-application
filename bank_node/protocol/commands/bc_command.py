@@ -5,22 +5,32 @@ from bank_node.utils.ip_helper import get_primary_local_ip
 
 class BCCommand(BaseCommand):
     """
-    Implements the BC (Bank Code) command.
-    Returns the bank's IP address.
+    Implements the BC (Bank Connect/Check) command.
+
+    Retrieves and returns the bank's IP address.
     """
 
     def validate_args(self) -> None:
         """
-        Validates the arguments.
-        For BC command, no arguments are expected, but we ignore them if present
-        to ensure robustness.
+        Validate the arguments.
+
+        For the BC command, no arguments are expected.
+        Existing arguments are ignored for robustness.
         """
         pass
 
     def execute_logic(self) -> Any:
         """
-        Retrieves the bank's IP address from the configuration.
-        Returns the formatted response string: "BC <ip>"
+        Execute the BC command logic.
+
+        Retrieves the configured server IP address. If the IP is '0.0.0.0',
+        it attempts to resolve the primary local IP.
+
+        Returns:
+            str: The formatted response "BC <ip_address>".
+
+        Side Effects:
+            Reads from the configuration manager.
         """
         server_config = self.bank.config_manager.get("server")
         ip_address = "127.0.0.1"

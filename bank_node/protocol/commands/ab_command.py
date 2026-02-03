@@ -8,12 +8,20 @@ from bank_node.core.config_manager import ConfigManager
 class ABCommand(BaseCommand):
     """
     Implements the AB (Account Balance) command.
+
+    Retrieves the balance of a specific account. Supports both local inquiries
+    and forwarding requests to remote bank nodes.
     """
 
     def validate_args(self) -> None:
         """
-        Validates the arguments for AB command.
-        Expects 1 arg: `account_id` (format `num/ip`).
+        Validate the arguments for the AB command.
+
+        Expects exactly 1 argument:
+        1. `account_id` in the format `<number>/<ip>` (e.g., "12345/192.168.1.1").
+
+        Raises:
+            ValueError: If argument count is wrong, format is invalid, or values are out of range.
         """
         if len(self.args) != 1:
             raise ValueError("Invalid arguments count. Usage: AB <account_id>")
@@ -44,6 +52,22 @@ class ABCommand(BaseCommand):
             raise ValueError("Invalid IP address")
 
     def execute_logic(self) -> str:
+        """
+        Execute the AB command logic.
+
+        If the target account is local, retrieves the balance.
+        If the target account is remote, forwards the command via `ProxyClient`.
+
+        Returns:
+            str: "AB <balance>" on success, or the response from the remote node.
+
+        Raises:
+            ValueError: If the account is not found (local only).
+
+        Side Effects:
+            - Reads account balance (local).
+            - Initiates network connection (remote).
+        """
         parts = self.args[0].split("/")
         account_num = int(parts[0])
         target_ip_full = parts[1]

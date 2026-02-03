@@ -3,21 +3,34 @@ from bank_node.protocol.commands.base_command import BaseCommand
 
 class BNCommand(BaseCommand):
     """
-    Implements the BN (Bank Number) command to get the number of clients.
+    Implements the BN (Bank Number) command.
+
+    Retrieves and returns the total number of clients (accounts) in the bank.
     """
 
     def validate_args(self) -> None:
         """
-        Validates the arguments for BN command.
-        Expects 0 args.
+        Validate the arguments for the BN command.
+
+        Expects 0 arguments.
+
+        Raises:
+            ValueError: If any arguments are provided.
         """
         if self.args:
             raise ValueError("Invalid arguments count. Usage: BN")
 
     def execute_logic(self) -> Any:
         """
-        Gets the number of clients in the bank.
-        Returns: "BN <number>"
+        Execute the BN command logic.
+
+        Retrieves the client count from the Bank instance.
+
+        Returns:
+            str: The formatted response "BN <count>".
+
+        Side Effects:
+            Reads account data from the repository.
         """
         count = self.bank.get_client_count()
         return f"BN {count}"

@@ -43,6 +43,22 @@ def get_primary_local_ip() -> str:
         return "127.0.0.1"
 
 def get_local_subnet_range(ip: str) -> tuple[str, str]:
+    """
+    Calculate the start and end IP addresses of the local subnet.
+
+    Uses the provided IP and the configured CIDR prefix (default /24)
+    to calculate the range of usable hosts in the subnet.
+
+    Args:
+        ip (str): The reference IP address within the subnet.
+
+    Returns:
+        tuple[str, str]: A tuple containing (start_ip, end_ip).
+            Returns ('127.0.0.1', '127.0.0.10') on error.
+
+    Side Effects:
+        - Reads network configuration via ConfigManager.
+    """
     try:
         config = ConfigManager()
         network_cfg = config.get("network", {}) or {}

@@ -6,53 +6,46 @@ class ProxyClient:
     Handles outgoing connections to other bank nodes.
     """
     
-    def __init__(self, timeout: float = None):
-        if timeout is not None:
-            self.timeout = float(timeout)
-        else:
-            self.timeout = 5.0
-            
+    def __init__(self, timeout: float = 5.0):
+        """
+        Initialize the ProxyClient.
+
+        Args:
+            timeout (float): Connection timeout in seconds. Defaults to 5.0.
+        """
+        self.timeout = timeout
         self.logger = logging.getLogger("ProxyClient")
 
     def send_command(self, target_ip: str, port: int, command_string: str) -> str:
         """
-        Sends a command to the specified bank and returns the response.
+        Send a command to a remote bank node and return the response.
+
+        Args:
+            target_ip (str): The IP address of the target node.
+            port (int): The port number of the target node.
+            command_string (str): The raw command string to send.
+
+        Returns:
+            str: The response from the remote node, or an error message starting with 'ER'.
+
+        Raises:
+            None: Exceptions are caught and returned as error strings.
+
+        Side Effects:
+            - Opens a TCP connection to the target.
+            - Sends data over the network.
         """
-        self.logger.info(f"Attempting to connect to {target_ip}:{port} (Timeout: {self.timeout}s)...")
         try:
-            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                s.settimeout(self.timeout)
-                s.connect((target_ip, port))
-                self.logger.info(f"Connected to {target_ip}:{port}. Sending: {command_string.strip()}")
-                
-                # Ensure command ends with newline
-                if not command_string.endswith('\n'):
-                    command_string += '\n'
-                
-                s.sendall(command_string.encode('utf-8'))
-                
-                # Receive response
-                response = s.recv(4096).decode('utf-8').strip()
-                self.logger.info(f"Received response from {target_ip}: {response}")
+            with socket.create_connection((target_ip, port), timeout=self.timeout) as sock:
+                sock.sendall(f"{command_string}\n".encode('utf-8'))
+                response = sock.recv(4096).decode('utf-8').strip()
                 return response
-                
         except socket.timeout:
-            msg = f"Timeout connecting to {target_ip}:{port} after {self.timeout}s"
-            self.logger.error(msg)
-            return f"ER {msg}"
+            self.logger.error(f"Timeout connecting to {target_ip}:{port}")
+            return "ER Connection timed out"
         except ConnectionRefusedError:
-            msg = f"Connection refused by {target_ip}:{port} (Is the bank running there?)"
-            self.logger.error(msg)
-            return f"ER {msg}"
-        except OSError as e:
-            if e.winerror == 10065: # WSAEHOSTUNREACH
-                msg = f"Host unreachable: {target_ip} (Check VPN/Network connection)"
-            elif e.winerror == 10060: # WSAETIMEDOUT
-                 msg = f"Connection timed out: {target_ip}"
-            else:
-                 msg = f"Network error connecting to {target_ip}: {e}"
-            self.logger.error(msg)
-            return f"ER {msg}"
+            self.logger.error(f"Connection refused by {target_ip}:{port}")
+            return "ER Connection refused"
         except Exception as e:
-            self.logger.error(f"Unexpected error connecting to {target_ip}:{port}: {e}")
-            return f"ER {str(e)}"
+            self.logger.error(f"Error sending command to {target_ip}:{port}: {e}")
+            return f"ER Network error: {str(e)}"

@@ -5,22 +5,34 @@ from bank_node.protocol.commands.base_command import BaseCommand
 class ACCommand(BaseCommand):
     """
     Implements the AC (Account Create) command.
-    Creates a new account and returns the account number and server IP.
+
+    Creates a new account in the bank and returns the new account number
+    combined with the server's IP address.
     """
 
     def validate_args(self) -> None:
         """
-        Validates the arguments.
-        For AC command, no arguments are expected, but we ignore them if present
-        to ensure robustness.
+        Validate the arguments.
+
+        For the AC command, no arguments are expected.
+        Existing arguments are ignored for robustness.
         """
         pass
 
     def execute_logic(self) -> Any:
         """
-        Creates a new account via the Bank instance.
-        Retrieves the server IP.
-        Returns the formatted response string: "AC <number>/<ip>"
+        Execute the AC command logic.
+
+        1. Creates a new account via the Bank instance.
+        2. Retrieves the server IP address.
+        3. Formats the response as "AC <account_number>/<ip_address>".
+
+        Returns:
+            str: The formatted response string.
+
+        Side Effects:
+            - Modifies Bank state by creating a new account.
+            - Reads from configuration.
         """
         # Create account
         account_number = self.bank.create_account()

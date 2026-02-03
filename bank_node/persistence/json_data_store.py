@@ -7,11 +7,32 @@ class JsonDataStore(IDataStore):
     Implementation of IDataStore using JSON files for persistence.
     """
     def __init__(self, file_path: str):
+        """
+        Initialize the JsonDataStore with a file path.
+
+        Args:
+            file_path (str): The absolute or relative path to the JSON file
+                used for data storage.
+        """
         self.file_path = file_path
 
     def save_data(self, data: dict):
         """
         Saves the dictionary data to the JSON file.
+
+        This method serializes the provided data dictionary to JSON format
+        and writes it to the specified file path. It creates the directory
+        structure if it does not exist.
+
+        Args:
+            data (dict): The data to save.
+        
+        Raises:
+            IOError: If the file cannot be opened or written to.
+            
+        Side Effects:
+            - Creates directories if they don't exist.
+            - Overwrites the content of the JSON file.
         """
         try:
             # Ensure directory exists
@@ -27,8 +48,20 @@ class JsonDataStore(IDataStore):
 
     def load_data(self) -> dict:
         """
-        Loads data from the JSON file. Returns empty dict if file doesn't exist.
-        Handles JSON decode errors by returning empty dict.
+        Loads data from the JSON file.
+
+        Reads the JSON file and deserializes it into a dictionary.
+        If the file does not exist or contains invalid JSON, returns an empty dictionary.
+
+        Returns:
+            dict: The loaded data as a dictionary. Returns {} if file is missing
+            or JSON is invalid.
+
+        Raises:
+            IOError: If there is an error reading the file (other than file not found).
+            
+        Side Effects:
+            - Opens and reads the file at `self.file_path`.
         """
         if not os.path.exists(self.file_path):
             return {}

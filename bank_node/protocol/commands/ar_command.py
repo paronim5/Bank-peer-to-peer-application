@@ -7,12 +7,20 @@ from bank_node.network.proxy_client import ProxyClient
 class ARCommand(BaseCommand):
     """
     Implements the AR (Account Remove) command.
+
+    Handles the removal of an account. Supports both local removal
+    and forwarding removal requests to remote bank nodes.
     """
 
     def validate_args(self) -> None:
         """
-        Validates the arguments for AR command.
-        Expects 1 arg: `account_id` (format `num/ip`).
+        Validate the arguments for the AR command.
+
+        Expects exactly 1 argument:
+        1. `account_id` in the format `<number>/<ip>`.
+
+        Raises:
+            ValueError: If argument count is wrong, format is invalid, or values are out of range.
         """
         if len(self.args) != 1:
             raise ValueError("Invalid arguments count. Usage: AR <account_id>")
@@ -43,10 +51,20 @@ class ARCommand(BaseCommand):
 
     def execute_logic(self) -> Any:
         """
-        Removes the specified account.
-        If the IP is local, removes locally.
-        If the IP is remote, forwards the command.
-        Returns: "AR"
+        Execute the AR command logic.
+
+        If the target account is local, removes it.
+        If the target account is remote, forwards the command via `ProxyClient`.
+
+        Returns:
+            str: "AR" on success, or the response from the remote node.
+
+        Raises:
+            ValueError: If account removal fails (e.g., non-zero balance) or remote execution fails.
+
+        Side Effects:
+            - Removes account from persistence (local).
+            - Initiates network connection (remote).
         """
         account_id = self.args[0]
         account_num = int(account_id.split("/")[0])

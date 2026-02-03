@@ -26,6 +26,18 @@ class ClientHandler(threading.Thread):
     """
 
     def __init__(self, client_socket: socket.socket, address: Tuple[str, int]):
+        """
+        Initialize the ClientHandler thread.
+
+        Args:
+            client_socket (socket.socket): The client's socket connection.
+            address (Tuple[str, int]): The client's address (IP, Port).
+
+        Side Effects:
+            - Initializes Bank, ConfigManager, and CommandFactory.
+            - Registers commands.
+            - Sets socket timeout based on configuration.
+        """
         super().__init__()
         self.client_socket = client_socket
         self.address = address
@@ -43,7 +55,12 @@ class ClientHandler(threading.Thread):
         self.client_socket.settimeout(timeout)
 
     def _register_commands(self):
-        """Registers all supported commands with the factory."""
+        """
+        Register all supported commands with the factory.
+        
+        Side Effects:
+            Calls `self.factory.register_command` for each supported command type.
+        """
         self.factory.register_command(CommandType.BC.value, BCCommand)
         self.factory.register_command(CommandType.AC.value, ACCommand)
         self.factory.register_command(CommandType.AD.value, ADCommand)
@@ -55,9 +72,17 @@ class ClientHandler(threading.Thread):
 
     def _clean_telnet_input(self, text: str) -> str:
         """
-        Processes backspace characters in the input string.
-        Handles both \b (0x08) and DEL (0x7F).
-        Also strips ANSI escape sequences to prevent garbage from arrow/delete keys.
+        Clean input string by handling backspaces and removing ANSI escape sequences.
+
+        Args:
+            text (str): The raw input string.
+
+        Returns:
+            str: The cleaned string.
+
+        Example:
+            >>> handler._clean_telnet_input("abc\\x08d")
+            "abd"
         """
         # Strip ANSI escape sequences
         ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
@@ -74,7 +99,15 @@ class ClientHandler(threading.Thread):
 
     def run(self):
         """
-        Main loop to receive and process data from the client.
+        Main execution loop for handling client communication.
+
+        Reads data from the socket, processes buffering, handles line endings,
+        executes commands, and sends responses.
+
+        Side Effects:
+            - Reads/Writes to the network socket.
+            - Logs connection events.
+            - Closes the socket on exit.
         """
         self.logger = logging.getLogger(f"ClientHandler-{self.address[0]}:{self.address[1]}")
         self.logger.info(f"Connection from {self.address} established.")
@@ -130,7 +163,16 @@ class ClientHandler(threading.Thread):
 
     def _process_message(self, message: str) -> str:
         """
-        Parses and executes a single message.
+        Parse and execute a single message.
+
+        Args:
+            message (str): The command string received from the client.
+
+        Returns:
+            str: The response string.
+
+        Side Effects:
+            Executes the command using the CommandFactory.
         """
         try:
             command_code, args = CommandParser.parse(message)

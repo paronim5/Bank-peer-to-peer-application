@@ -11,7 +11,13 @@ class Validator:
     @staticmethod
     def validate_ip(ip_str: str) -> bool:
         """
-        Validates if the provided string is a valid IPv4 address.
+        Validate if the provided string is a valid IPv4 address.
+
+        Args:
+            ip_str (str): The IP string to check.
+
+        Returns:
+            bool: True if it matches the IPv4 pattern, False otherwise.
         """
         if not isinstance(ip_str, str):
             return False
@@ -20,7 +26,13 @@ class Validator:
     @staticmethod
     def validate_account_number(num: int) -> bool:
         """
-        Validates if the account number is an integer between 10000 and 99999.
+        Validate if the account number is within the valid range (10000-99999).
+
+        Args:
+            num (int): The account number.
+
+        Returns:
+            bool: True if 10000 <= num <= 99999.
         """
         if not isinstance(num, int):
             return False
@@ -29,7 +41,13 @@ class Validator:
     @staticmethod
     def validate_amount(amount: int) -> bool:
         """
-        Validates if the amount is a non-negative integer.
+        Validate if the amount is non-negative.
+
+        Args:
+            amount (int): The monetary amount.
+
+        Returns:
+            bool: True if amount >= 0.
         """
         if not isinstance(amount, int):
             return False
@@ -38,7 +56,13 @@ class Validator:
     @staticmethod
     def validate_port(port: int) -> bool:
         """
-        Validates if the port is an integer between 65525 and 65535.
+        Validate if the port is within the allowed range (65525-65535).
+
+        Args:
+            port (int): The port number.
+
+        Returns:
+            bool: True if 65525 <= port <= 65535.
         """
         if not isinstance(port, int):
             return False

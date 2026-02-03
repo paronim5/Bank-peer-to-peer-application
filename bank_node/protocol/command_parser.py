@@ -9,13 +9,19 @@ class CommandParser:
     @staticmethod
     def parse(raw_data: str) -> Tuple[Optional[str], List[str]]:
         """
-        Parses the raw input string.
-        
+        Parse a raw input string into a command code and arguments.
+
         Args:
-            raw_data: The raw string received from the network.
-            
+            raw_data (str): The raw string received from the network.
+
         Returns:
-            A tuple containing the command code (or None if invalid) and a list of arguments.
+            Tuple[Optional[str], List[str]]: A tuple containing:
+                - The command code (str) if valid, or None if invalid/empty.
+                - A list of argument strings (List[str]).
+
+        Example:
+            >>> CommandParser.parse("BC 192.168.1.1 8080")
+            ('BC', ['192.168.1.1', '8080'])
         """
         if not raw_data:
             return None, []

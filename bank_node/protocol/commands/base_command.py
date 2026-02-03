@@ -5,16 +5,18 @@ from bank_node.core.bank import Bank
 class BaseCommand(ABC):
     """
     Abstract base class for all protocol commands.
-    Implements the Template Method pattern for command execution.
+    
+    Implements the Template Method pattern for command execution, providing
+    standard lifecycle methods for validation, execution, and response formatting.
     """
 
     def __init__(self, bank: Bank, args: List[str]):
         """
-        Initialize the command with the bank instance and raw arguments.
-        
+        Initialize the command with a Bank instance and arguments.
+
         Args:
-            bank: The singleton Bank instance.
-            args: List of string arguments passed with the command.
+            bank (Bank): The singleton Bank instance to operate on.
+            args (List[str]): List of string arguments passed with the command.
         """
         self.bank = bank
         self.args = args
@@ -22,23 +24,38 @@ class BaseCommand(ABC):
     @abstractmethod
     def validate_args(self) -> None:
         """
-        Validates the arguments passed to the command.
-        Raises ValueError if arguments are invalid.
+        Validate the arguments passed to the command.
+
+        Raises:
+            ValueError: If the arguments are invalid (count, type, or format).
         """
         pass
 
     @abstractmethod
     def execute_logic(self) -> Any:
         """
-        Performs the core business logic of the command.
-        Returns the result data to be formatted in the response.
+        Perform the core business logic of the command.
+
+        Returns:
+            Any: The result data to be formatted in the response (usually a string or None).
+
+        Raises:
+            Exception: Any exception raised during logic execution (e.g., account not found).
         """
         pass
 
     def execute(self) -> str:
         """
-        Template method that defines the lifecycle of a command execution:
-        Validate -> Execute Logic -> Format Response (Success/Error).
+        Execute the command following the standard lifecycle.
+
+        Steps:
+        1. Validate arguments (`validate_args`).
+        2. Execute business logic (`execute_logic`).
+        3. Format success response (`format_success`).
+        4. Catch and format errors (`format_error`).
+
+        Returns:
+            str: The final response string to be sent to the client.
         """
         try:
             self.validate_args()
@@ -52,16 +69,13 @@ class BaseCommand(ABC):
 
     def format_success(self, data: Any = None) -> str:
         """
-        Formats a success response.
-        If data is provided, appends it to the success code (e.g., "AR data").
-        Note: The actual command code (e.g. AR) is usually handled by the specific command or parser,
-        but for this base, we might assume the subclass knows its code or we return a standard success.
-        
-        However, based on standard peer-to-peer protocols, the response usually echoes the command code
-        or a specific success code.
-        
-        Let's assume the concrete class will return the full response string or data.
-        If `result` is a string, return it.
+        Format a success response.
+
+        Args:
+            data (Any, optional): The data to include in the response. Defaults to None.
+
+        Returns:
+            str: The formatted success string (e.g., "OK" or the data string).
         """
         # Simplification: The concrete execute_logic returns the string payload or we just return it.
         # But wait, the prompt says: "Helper methods for formatting responses (CODE data vs CODE)".
@@ -80,6 +94,12 @@ class BaseCommand(ABC):
 
     def format_error(self, message: str) -> str:
         """
-        Formats an error response.
+        Format an error response.
+
+        Args:
+            message (str): The error description.
+
+        Returns:
+            str: The formatted error string (e.g., "ERR <message>").
         """
         return f"ERR {message}"

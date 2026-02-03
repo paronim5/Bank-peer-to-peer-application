@@ -5,33 +5,72 @@ from bank_node.persistence.i_data_store import IDataStore
 class AccountRepository:
     """
     Repository for managing BankAccount entities.
-    Abstracts the data persistence layer using IDataStore.
+    Abstracts the data persistence layer using IDataStore to provide
+    a collection-like interface for accessing accounts.
     """
     def __init__(self, data_store: IDataStore):
+        """
+        Initialize the AccountRepository.
+
+        Args:
+            data_store (IDataStore): The persistence strategy implementation (e.g., JsonDataStore).
+        """
         self._data_store = data_store
         self._accounts: Dict[int, BankAccount] = {}
 
     def add_account(self, account: BankAccount) -> None:
-        """Adds an account to the repository."""
+        """
+        Adds an account to the repository.
+
+        Args:
+            account (BankAccount): The account object to add.
+        
+        Side Effects:
+            Updates the internal memory cache. Does not auto-save to disk.
+        """
         self._accounts[account.number] = account
 
     def get_account(self, number: int) -> Optional[BankAccount]:
-        """Retrieves an account by its number. Returns None if not found."""
+        """
+        Retrieves an account by its number.
+
+        Args:
+            number (int): The account number to look up.
+
+        Returns:
+            Optional[BankAccount]: The account object if found, otherwise None.
+        """
         return self._accounts.get(number)
 
     def remove_account(self, number: int) -> None:
-        """Removes an account from the repository."""
+        """
+        Removes an account from the repository.
+
+        Args:
+            number (int): The account number to remove.
+
+        Side Effects:
+            Removes the account from internal memory. Does not auto-save to disk.
+        """
         if number in self._accounts:
             del self._accounts[number]
 
     def get_all_accounts(self) -> List[BankAccount]:
-        """Returns a list of all accounts in the repository."""
+        """
+        Returns a list of all accounts in the repository.
+
+        Returns:
+            List[BankAccount]: A list of all managed BankAccount objects.
+        """
         return list(self._accounts.values())
 
     def load(self) -> None:
         """
-        Loads accounts from the data store.
+        Loads accounts from the configured data store.
         Populates the internal memory with BankAccount objects.
+
+        Side Effects:
+            Clears existing memory and repopulates it from the data store.
         """
         data = self._data_store.load_data()
         self._accounts.clear()
@@ -56,7 +95,10 @@ class AccountRepository:
     def save(self) -> None:
         """
         Saves all accounts to the data store.
-        Converts BankAccount objects to dictionaries.
+        Converts BankAccount objects to dictionaries and persists them.
+
+        Side Effects:
+            Writes data to the underlying storage medium (file/db).
         """
         data = {}
         for number, account in self._accounts.items():

@@ -18,7 +18,19 @@ from bank_node.network.tcp_server import TcpServer
 
 def setup_logging(config: ConfigManager):
     """
-    Configures the logging system based on configuration.
+    Configures the application's logging system based on provided configuration.
+
+    Sets up the root logger with a specific level and format.
+    Configures both stream (stdout) and file handlers.
+
+    Args:
+        config (ConfigManager): The configuration manager instance containing
+            logging settings (level, file path).
+    
+    Side Effects:
+        - Modifies the global logging configuration via `logging.basicConfig`.
+        - Creates or appends to a log file.
+        - Writes an initial log message.
     """
     log_config = config.get("logging", {})
     level_str = log_config.get("level", "INFO").upper()
@@ -40,6 +52,24 @@ def setup_logging(config: ConfigManager):
 def main():
     """
     Main application entry point.
+
+    Orchestrates the startup of the Bank Peer-to-Peer Node:
+    1. Loads configuration.
+    2. Initializes logging.
+    3. Sets up the persistence layer (JSON or SQLite).
+    4. Initializes the Bank facade and AccountRepository.
+    5. Sets up the AutoSaver observer.
+    6. Starts the TCP server.
+    
+    Handles the main application lifecycle and graceful shutdown on interrupts.
+
+    Raises:
+        SystemExit: Implicitly on completion or unrecoverable error (handled by sys.exit usually, but here we just return).
+        
+    Side Effects:
+        - Starts a TCP server process (blocking).
+        - Writes to log files.
+        - Modifies file system (database/persistence files).
     """
     # 1. Load Configuration
     config_manager = ConfigManager()

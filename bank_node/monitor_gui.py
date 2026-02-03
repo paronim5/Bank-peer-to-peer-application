@@ -9,7 +9,24 @@ import queue
 import time
 
 class NodeMonitor(tk.Tk):
+    """
+    GUI application for monitoring and controlling the Bank Node.
+    
+    Provides a dashboard to start/stop the node process and view real-time logs.
+    Inherits from `tkinter.Tk`.
+    """
     def __init__(self):
+        """
+        Initialize the NodeMonitor GUI.
+        
+        Sets up the window, grid configuration, process management variables,
+        and initializes UI components.
+        
+        Side Effects:
+            - Creates a Tkinter window.
+            - Sets up a periodic callback for log processing.
+            - Binds the window close event.
+        """
         super().__init__()
         self.title("Bank Node Monitor")
         self.geometry("800x600")
@@ -33,6 +50,15 @@ class NodeMonitor(tk.Tk):
         self.protocol("WM_DELETE_WINDOW", self._on_close)
 
     def _create_widgets(self):
+        """
+        Create and arrange the GUI widgets.
+        
+        Constructs the header (status, control button), info label, and
+        scrolled text area for logs.
+        
+        Side Effects:
+            - Adds widgets to the Tkinter window.
+        """
         # 1. Header Frame (Status + Controls)
         header_frame = tk.Frame(self, pady=10)
         header_frame.grid(row=0, column=0, sticky="ew")
@@ -64,12 +90,31 @@ class NodeMonitor(tk.Tk):
         self.log_area.tag_config("WARNING", foreground="#FF8C00") # Dark Orange
 
     def _toggle_node(self):
+        """
+        Toggle the running state of the bank node.
+        
+        If the node is running, stops it. If stopped, starts it.
+        
+        Side Effects:
+            - Calls `_stop_node` or `_start_node`.
+        """
         if self.is_running:
             self._stop_node()
         else:
             self._start_node()
 
     def _start_node(self):
+        """
+        Start the bank node as a subprocess.
+        
+        Launches `main.py` in a separate process and starts a thread to
+        capture its output.
+        
+        Side Effects:
+            - Spawns a new subprocess (`subprocess.Popen`).
+            - Starts a background thread (`_read_output`).
+            - Updates UI state.
+        """
         if self.process:
             return
             
@@ -102,6 +147,15 @@ class NodeMonitor(tk.Tk):
             self._stop_node()
 
     def _stop_node(self):
+        """
+        Stop the running bank node.
+        
+        Terminates the subprocess if it exists.
+        
+        Side Effects:
+            - Terminates the subprocess.
+            - Updates UI state.
+        """
         if self.process:
             self._log("SYSTEM", "Stopping node...")
             self.process.terminate()
@@ -112,6 +166,17 @@ class NodeMonitor(tk.Tk):
         self._log("SYSTEM", "Node stopped.")
 
     def _update_ui_state(self, running):
+        """
+        Update the UI elements to reflect the node's running state.
+        
+        Changes the status indicator color, text, and button label.
+        
+        Args:
+            running (bool): True if the node is running, False otherwise.
+            
+        Side Effects:
+            - Modifies widget properties (text, color).
+        """
         if running:
             self.status_canvas.itemconfig(self.status_light, fill="#00FF00") # Green
             self.status_label.config(text="Status: RUNNING")
@@ -122,7 +187,16 @@ class NodeMonitor(tk.Tk):
             self.btn_control.config(text="Start Node", bg="#4CAF50") # Green
 
     def _read_output(self):
-        """Reads stdout from the subprocess and puts lines into the queue."""
+        """
+        Read stdout from the subprocess and enqueue lines.
+        
+        Intended to run in a separate thread to prevent blocking the GUI.
+        Reads lines from the process stdout and puts them into `self.log_queue`.
+        
+        Side Effects:
+            - Reads from a file descriptor (stdout).
+            - Modifies `self.log_queue`.
+        """
         if not self.process:
             return
             
@@ -143,7 +217,17 @@ class NodeMonitor(tk.Tk):
                 pass
 
     def _process_log_queue(self):
-        """Updates the text area with new logs from the queue."""
+        """
+        Process the log queue and update the text area.
+        
+        Scheduled periodically on the main thread.
+        Dequeues messages and appends them to the log display.
+        Also checks if the subprocess has died unexpectedly.
+        
+        Side Effects:
+            - Updates the `log_area` widget.
+            - Schedules itself to run again (`after`).
+        """
         while not self.log_queue.empty():
             line = self.log_queue.get_nowait()
             self._append_log(line)
@@ -174,6 +258,16 @@ class NodeMonitor(tk.Tk):
         self.log_area.config(state='disabled')
 
     def _on_close(self):
+        """
+        Handle the window close event.
+        
+        Prompts for confirmation if the node is running. Stops the node
+        before destroying the window.
+        
+        Side Effects:
+            - May stop the subprocess.
+            - Destroys the Tkinter window.
+        """
         if self.is_running:
             if messagebox.askokcancel("Quit", "Node is running. Stop node and quit?"):
                 self._stop_node()

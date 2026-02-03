@@ -8,12 +8,32 @@ class SqliteDataStore(IDataStore):
     Implementation of IDataStore using SQLite for persistence.
     """
     def __init__(self, db_path: str):
+        """
+        Initialize the SqliteDataStore with a database path.
+
+        Automatically initializes the database schema if it doesn't exist.
+
+        Args:
+            db_path (str): The file path to the SQLite database.
+        
+        Side Effects:
+            - Creates a new SQLite database file if one doesn't exist.
+            - Calls `_initialize_db` to set up tables.
+        """
         self.db_path = db_path
         self._initialize_db()
 
     def _initialize_db(self):
         """
         Creates the necessary tables if they don't exist.
+
+        Sets up the 'accounts' table with columns for account_id, balance, and history.
+
+        Raises:
+            sqlite3.Error: If the table creation fails.
+            
+        Side Effects:
+            - Modifies the database schema.
         """
         try:
             conn = sqlite3.connect(self.db_path)
@@ -34,10 +54,23 @@ class SqliteDataStore(IDataStore):
     def save_data(self, data: Dict[str, Any]) -> None:
         """
         Saves the entire bank state to SQLite.
-        Clears the existing table and re-inserts current state to ensure consistency.
-        
+
+        This implementation uses a "wipe and rewrite" strategy for simplicity:
+        it clears the existing 'accounts' table and re-inserts the current state.
+        This ensures the database exactly matches the in-memory state.
+        Operations are performed within a transaction.
+
         Args:
-            data (dict): The data to save. Structure: {account_id: account_dict}
+            data (Dict[str, Any]): The data to save.
+                Expected structure: {account_id: account_dict}
+
+        Raises:
+            sqlite3.Error: If the database operations fail.
+            
+        Side Effects:
+            - Deletes all rows in the 'accounts' table.
+            - Inserts new rows for the current data.
+            - Commits the transaction to disk.
         """
         # Ensure tables exist (per requirements)
         self._initialize_db()
@@ -74,9 +107,22 @@ class SqliteDataStore(IDataStore):
     def load_data(self) -> Dict[str, Any]:
         """
         Loads the bank state from SQLite.
-        
+
+        Retrieves all rows from the 'accounts' table and reconstructs the
+        dictionary structure expected by the application.
+        Parses the JSON-serialized history field.
+
         Returns:
-            dict: The loaded data. Structure: {account_id: account_dict}
+            Dict[str, Any]: The loaded data.
+                Structure: {account_id: {'number': ..., 'balance': ..., 'history': ...}}
+                Returns an empty dictionary if the table does not exist.
+
+        Raises:
+            sqlite3.Error: If the database query fails.
+            
+        Side Effects:
+            - Connects to the SQLite database.
+            - executes SELECT queries.
         """
         try:
             conn = sqlite3.connect(self.db_path)

@@ -16,6 +16,12 @@ class CommandType(Enum):
     @staticmethod
     def is_valid(command: str) -> bool:
         """
-        Checks if the provided command string is a valid command type.
+        Check if the provided command string is a valid command type.
+
+        Args:
+            command (str): The command code to check.
+
+        Returns:
+            bool: True if the command is in the Enum values, False otherwise.
         """
         return any(command == item.value for item in CommandType)

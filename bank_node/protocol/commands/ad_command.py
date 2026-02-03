@@ -8,12 +8,21 @@ from bank_node.core.config_manager import ConfigManager
 class ADCommand(BaseCommand):
     """
     Implements the AD (Account Deposit) command.
+
+    Handles depositing money into an account. Supports both local deposits
+    and forwarding deposit requests to remote bank nodes.
     """
 
     def validate_args(self) -> None:
         """
-        Validates the arguments for AD command.
-        Expects 2 args: `account_id` (format `num/ip`) and `amount`.
+        Validate the arguments for the AD command.
+
+        Expects exactly 2 arguments:
+        1. `account_id` in the format `<number>/<ip>` (e.g., "12345/192.168.1.1").
+        2. `amount` as a positive integer.
+
+        Raises:
+            ValueError: If argument count is wrong, formats are invalid, or values are out of range.
         """
         if len(self.args) != 2:
             raise ValueError("Invalid arguments count. Usage: AD <account_id> <amount>")
@@ -57,7 +66,17 @@ class ADCommand(BaseCommand):
 
     def execute_logic(self) -> Any:
         """
-        Deposits money into the specified account.
+        Execute the AD command logic.
+
+        If the target account is local, deposits the amount directly.
+        If the target account is remote, forwards the command via `ProxyClient`.
+
+        Returns:
+            str: "AD" on success, or the response from the remote node.
+
+        Side Effects:
+            - Modifies account balance (local).
+            - Initiates network connection (remote).
         """
         account_id = self.args[0]
         amount = int(self.args[1])
